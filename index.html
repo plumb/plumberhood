@@ -28,6 +28,7 @@
       --c-red: #ff3b30;
       --c-green: #34c759;
       --c-orange: #ff9500;
+      --c-gold: #c8a951;
       --c-pol-blue: #007aff;
       --c-pol-red: #ff3b30;
       --safe-top: env(safe-area-inset-top, 47px);
@@ -43,7 +44,7 @@
     #map { width: 100%; height: 100vh; height: -webkit-fill-available; }
     .mapboxgl-ctrl-top-right { top: calc(var(--safe-top) + 52px) !important; right: 8px !important; }
 
-    /* ── Top bar (HIG nav bar: 44pt + safe area) ── */
+    /* ── Top bar ── */
     .top-bar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 10;
       background: rgba(249,249,249,0.94); backdrop-filter: saturate(180%) blur(20px);
@@ -69,37 +70,45 @@
     /* ── Filter bar ── */
     .filter-bar {
       position: fixed; top: calc(var(--safe-top) + 52px); left: 0; right: 0; z-index: 8;
-      padding: 8px 16px; display: none; gap: 6px; overflow-x: auto;
+      padding: 8px 16px; display: none; gap: 6px; overflow-x: auto; align-items: center;
       background: rgba(249,249,249,0.94); backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
     }
     .filter-bar.visible { display: flex; }
     .filter-chip {
-      padding: 6px 14px; border-radius: 20px; font-size: 15px; font-weight: 500;
+      padding: 6px 12px; border-radius: 20px; font-size: 18px;
       border: none; background: rgba(142,142,147,0.12); white-space: nowrap;
-      cursor: pointer; color: var(--c-secondary);
+      cursor: pointer; color: var(--c-secondary); min-width: 40px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
     }
     .filter-chip:active { opacity: 0.6; }
     .filter-chip.active { background: var(--c-blue); color: #fff; }
+    .filter-clear {
+      padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      border: none; background: transparent; color: var(--c-blue);
+      cursor: pointer; white-space: nowrap; margin-left: auto;
+    }
+    .filter-clear:active { opacity: 0.4; }
+    .filter-clear.hidden { display: none; }
 
-    /* ── Bottom bar (HIG tab bar: 49pt + safe) ── */
+    /* ── Bottom bar ── */
     .bottom-bar {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
       background: rgba(249,249,249,0.94); backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
-      padding: 8px 16px calc(var(--safe-bottom) + 4px); display: flex; gap: 8px;
+      padding: 10px 16px calc(var(--safe-bottom) + 12px); display: flex; gap: 8px;
       border-top: 0.5px solid var(--c-separator);
     }
     .bottom-bar.hidden { display: none; }
     .bottom-bar button {
-      flex: 1; height: 44px; border-radius: 12px; border: none;
+      flex: 1; height: 50px; border-radius: 12px; border: none;
       font-size: 15px; font-weight: 600; cursor: pointer;
     }
     .bottom-bar button:active { opacity: 0.7; }
     .btn-filled { background: var(--c-blue); color: #fff; }
     .btn-tinted { background: rgba(0,122,255,0.12); color: var(--c-blue); }
 
-    /* ── Panels (HIG sheets) ── */
+    /* ── Panels ── */
     .panel-overlay {
       position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.3);
       display: none; align-items: flex-end; justify-content: center;
@@ -108,14 +117,14 @@
     .panel {
       background: var(--c-bg); border-radius: 12px 12px 0 0; width: 100%;
       max-width: 500px; max-height: 92vh; overflow-y: auto;
-      padding: 0 16px 40px;
+      padding: 0 16px calc(var(--safe-bottom) + 16px);
       animation: slideUp 0.35s cubic-bezier(0.32,0.72,0,1);
       -webkit-overflow-scrolling: touch;
     }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .grab-bar { width: 36px; height: 5px; border-radius: 2.5px; background: var(--c-quaternary); margin: 6px auto 0; }
 
-    /* ── Shared form styles ── */
+    /* ── Form styles ── */
     .form-group { margin-top: 16px; }
     .form-label { font-size: 13px; font-weight: 600; color: var(--c-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
     .form-input {
@@ -126,7 +135,7 @@
     .form-input:focus { outline: 2px solid var(--c-blue); outline-offset: -2px; }
     textarea.form-input { resize: vertical; min-height: 60px; }
 
-    /* ── Toggle row (HIG segmented style) ── */
+    /* ── Toggle row ── */
     .toggle-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
     .toggle-label { font-size: 17px; color: var(--c-label); flex: 1; }
     .seg-toggle { display: flex; background: var(--c-bg2); border-radius: 9px; padding: 2px; }
@@ -147,7 +156,7 @@
       letter-spacing: 0.5px; padding: 20px 0 6px;
     }
 
-    /* ── Edit panel top actions (anchored) ── */
+    /* ── Edit panel top actions ── */
     .edit-top-bar {
       position: sticky; top: 0; z-index: 2; background: var(--c-bg);
       padding: 12px 0 8px; display: flex; align-items: center;
@@ -164,18 +173,22 @@
     .edit-top-bar button:active { opacity: 0.4; }
     .edit-top-bar .etb-title { font-size: 17px; font-weight: 600; }
 
-    /* ── Cards (contacts, dogs) ── */
+    /* ── Cards (contacts, dogs) with iOS minus-circle delete ── */
     .edit-card {
-      background: var(--c-bg2); border-radius: 10px; padding: 12px;
-      margin-bottom: 8px; position: relative;
+      background: var(--c-bg2); border-radius: 10px; padding: 10px 12px;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
     }
+    .edit-card .card-fields { flex: 1; min-width: 0; }
     .edit-card .form-input { background: var(--c-bg); margin-bottom: 6px; }
     .edit-card .form-input:last-of-type { margin-bottom: 0; }
-    .rm-btn {
-      position: absolute; top: 8px; right: 8px; width: 28px; height: 28px;
-      border-radius: 50%; border: none; background: rgba(255,59,48,0.12); color: var(--c-red);
-      font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    .rm-circle {
+      width: 22px; height: 22px; border-radius: 11px; flex-shrink: 0;
+      background: var(--c-red); color: #fff; border: none;
+      font-size: 18px; font-weight: 400; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
     }
+    .rm-circle:active { opacity: 0.6; }
     .add-row {
       width: 100%; padding: 11px; border-radius: 10px; border: none;
       background: rgba(0,122,255,0.08); color: var(--c-blue); font-size: 15px;
@@ -200,49 +213,18 @@
     }
 
     /* ── Detail panel ── */
-    .detail-top { display: flex; align-items: flex-start; gap: 8px; padding: 16px 0 4px; }
+    .detail-top { display: flex; align-items: flex-start; gap: 8px; padding: 16px 0 2px; }
     .detail-top h2 { flex: 1; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
     .star-btn {
       min-width: 44px; height: 44px; border-radius: 22px; border: none;
       background: transparent; font-size: 24px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
+      transition: transform 0.15s;
     }
     .star-btn:active { transform: scale(0.85); }
-    .star-btn.active { }
-    .detail-meta { font-size: 13px; color: var(--c-tertiary); padding-bottom: 12px; }
 
-    /* Contact row in detail */
-    .detail-contact {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 0; border-bottom: 0.5px solid var(--c-separator);
-    }
-    .detail-contact:last-child { border: none; }
-    .dc-avatar {
-      width: 40px; height: 40px; border-radius: 20px; background: var(--c-bg2);
-      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
-    }
-    .dc-info { flex: 1; min-width: 0; }
-    .dc-name { font-size: 17px; font-weight: 600; }
-    .dc-email { font-size: 15px; color: var(--c-blue); text-decoration: none; }
-    .dc-email:active { opacity: 0.5; }
-
-    /* Phone row (address-level) */
-    .phone-row {
-      display: flex; align-items: center; gap: 12px; padding: 12px 0;
-      border-bottom: 0.5px solid var(--c-separator);
-    }
-    .phone-icon {
-      width: 40px; height: 40px; border-radius: 20px; background: rgba(52,199,89,0.12);
-      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
-    }
-    .phone-link { font-size: 17px; color: var(--c-blue); text-decoration: none; font-weight: 500; }
-    .phone-link:active { opacity: 0.5; }
-
-    .detail-section { padding: 12px 0; border-bottom: 0.5px solid var(--c-separator); }
-    .detail-section:last-of-type { border: none; }
-    .detail-slabel { font-size: 13px; font-weight: 600; color: var(--c-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-    .detail-val { font-size: 17px; color: var(--c-label); line-height: 1.5; }
-    .detail-val.empty { color: var(--c-quaternary); font-style: italic; font-size: 15px; }
+    /* Tags area — directly below address */
+    .detail-tags-area { padding: 4px 0 8px; }
     .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; }
     .dtag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; }
     .dtag.friendly { background: rgba(52,199,89,0.12); color: #1b7a3a; }
@@ -251,18 +233,53 @@
     .dtag.elephant { background: rgba(255,59,48,0.12); color: #c92a20; }
     .dtag.custom { background: var(--c-bg2); color: var(--c-secondary); }
 
-    .dog-row {
+    /* Contact info row (phone/email at address level) */
+    .info-row {
       display: flex; align-items: center; gap: 12px;
-      padding: 10px 0; border-bottom: 0.5px solid var(--c-separator);
+      padding: 8px 0; border-bottom: 0.5px solid var(--c-separator);
+    }
+    .info-row:first-child { padding-top: 4px; }
+    .info-icon {
+      width: 32px; height: 32px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+    }
+    .info-icon.phone-bg { background: rgba(52,199,89,0.12); }
+    .info-icon.email-bg { background: rgba(0,122,255,0.12); }
+    .info-link { font-size: 17px; color: var(--c-blue); text-decoration: none; font-weight: 500; }
+    .info-link:active { opacity: 0.5; }
+
+    .detail-section { padding: 8px 0; border-bottom: 0.5px solid var(--c-separator); }
+    .detail-section:last-of-type { border: none; }
+    .detail-slabel { font-size: 13px; font-weight: 600; color: var(--c-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .detail-val { font-size: 17px; color: var(--c-label); line-height: 1.5; }
+    .detail-val.empty { color: var(--c-quaternary); font-style: italic; font-size: 15px; }
+    .detail-meta { font-size: 13px; color: var(--c-tertiary); padding: 8px 0 4px; }
+
+    /* Contact row in detail — tightened */
+    .detail-contact {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 0; border-bottom: 0.5px solid var(--c-separator);
+    }
+    .detail-contact:last-child { border: none; }
+    .dc-avatar {
+      width: 32px; height: 32px; border-radius: 16px; background: var(--c-bg2);
+      display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+    }
+    .dc-info { flex: 1; min-width: 0; }
+    .dc-name { font-size: 17px; font-weight: 600; }
+
+    .dog-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 0; border-bottom: 0.5px solid var(--c-separator);
     }
     .dog-row:last-child { border: none; }
 
-    .interaction-row { padding: 10px 0; border-bottom: 0.5px solid var(--c-separator); }
+    .interaction-row { padding: 8px 0; border-bottom: 0.5px solid var(--c-separator); }
     .interaction-row:last-child { border: none; }
     .int-note { font-size: 15px; color: var(--c-label); }
     .int-meta { font-size: 13px; color: var(--c-tertiary); margin-top: 2px; }
 
-    .detail-actions { display: flex; gap: 8px; padding: 16px 0; }
+    .detail-actions { display: flex; gap: 8px; padding: 12px 0; }
     .detail-actions button {
       flex: 1; height: 44px; border-radius: 12px; border: none;
       font-size: 15px; font-weight: 600; cursor: pointer;
@@ -293,7 +310,6 @@
       background: var(--c-label); color: #fff; padding: 10px 20px;
       border-radius: 12px; font-size: 15px; font-weight: 500;
       z-index: 300; opacity: 0; transition: opacity 0.3s; pointer-events: none;
-      box-shadow: var(--shadow-lg);
     }
     .toast.show { opacity: 1; }
 
@@ -317,29 +333,12 @@
     }
     .auth-err { color: var(--c-red); font-size: 15px; margin-top: 8px; max-width: 320px; text-align: center; }
 
-    /* ── Marker overlay ── */
-    .mk-wrap { position: relative; cursor: pointer; }
-    .mk-pin {
-      width: 30px; height: 30px; border-radius: 50% 50% 50% 4px;
-      border: 2.5px solid #fff; display: flex; align-items: center; justify-content: center;
-      transform: rotate(-45deg); box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    /* ── Map marker: simple emoji dot ── */
+    .mk-emoji {
+      font-size: 16px; cursor: pointer; line-height: 1;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
     }
-    .mk-pin:active { transform: rotate(-45deg) scale(1.1); }
-    .mk-emoji { transform: rotate(45deg); font-size: 13px; }
-    .mk-star { position: absolute; top: -5px; right: -5px; font-size: 11px; display: none; }
-    .mk-star.vis { display: block; }
-
-    /* Name label overlay */
-    .mk-label {
-      position: absolute; top: 34px; left: 50%; transform: translateX(-50%);
-      background: rgba(255,255,255,0.92); backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      padding: 2px 8px; border-radius: 6px; white-space: nowrap;
-      font-size: 13px; font-weight: 600; color: var(--c-label);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      pointer-events: none; display: none; max-width: 140px; overflow: hidden; text-overflow: ellipsis;
-    }
-    .show-labels .mk-label { display: block; }
+    .mk-emoji:active { transform: scale(1.3); }
 
     /* Settings */
     .settings-row { padding: 12px 0; border-bottom: 0.5px solid var(--c-separator); }
@@ -375,14 +374,14 @@
   <button class="nav-btn" onclick="openSettings()">⚙️</button>
 </div>
 
-<!-- Filters -->
+<!-- Filters — emoji-only chips + clear all -->
 <div class="filter-bar" id="filterBar">
-  <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
-  <div class="filter-chip" data-filter="friendly" onclick="setFilter('friendly')">😊 Friendly</div>
-  <div class="filter-chip" data-filter="not-friendly" onclick="setFilter('not-friendly')">😠 Not</div>
+  <div class="filter-chip" data-filter="friendly" onclick="setFilter('friendly')">😊</div>
+  <div class="filter-chip" data-filter="not-friendly" onclick="setFilter('not-friendly')">😠</div>
   <div class="filter-chip" data-filter="donkey" onclick="setFilter('donkey')">🫏</div>
   <div class="filter-chip" data-filter="elephant" onclick="setFilter('elephant')">🐘</div>
-  <div class="filter-chip" data-filter="starred" onclick="setFilter('starred')">⭐ Starred</div>
+  <div class="filter-chip" data-filter="starred" onclick="setFilter('starred')">⭐</div>
+  <button class="filter-clear hidden" id="filterClear" onclick="clearFilters()">Clear</button>
 </div>
 
 <div id="map"></div>
@@ -404,17 +403,17 @@
       <button class="star-btn" id="starBtn" onclick="toggleStar()">☆</button>
     </div>
 
-    <div id="dPhone"></div>
+    <!-- Tags — right below address -->
+    <div class="detail-tags-area">
+      <div class="detail-tags" id="dTags"></div>
+    </div>
+
+    <!-- Phone & Email (address-level) -->
+    <div id="dContactInfo"></div>
 
     <div id="dContactsSec" class="detail-section">
       <div class="detail-slabel">Contacts</div>
       <div id="dContacts"></div>
-    </div>
-
-    <div class="detail-meta" id="dMeta"></div>
-
-    <div class="detail-section">
-      <div class="detail-tags" id="dTags"></div>
     </div>
 
     <div id="dDogsSec" class="detail-section">
@@ -432,8 +431,10 @@
         <div class="detail-slabel" style="flex:1;margin:0;">Interactions</div>
         <button class="add-row" style="width:auto;padding:4px 14px;font-size:13px;" onclick="openLogInt()">+ Log</button>
       </div>
-      <div id="dInts" style="margin-top:8px;"></div>
+      <div id="dInts" style="margin-top:6px;"></div>
     </div>
+
+    <div class="detail-meta" id="dMeta"></div>
 
     <div class="detail-actions">
       <button class="btn-tinted" onclick="closePanel('detailPanel')">Close</button>
@@ -470,6 +471,7 @@
 
     <div class="form-group"><div class="form-label">Address</div><input class="form-input" id="eAddr" placeholder="123 NE Main St"></div>
     <div class="form-group"><div class="form-label">Phone</div><input class="form-input" id="ePhone" type="tel" placeholder="(503) 555-1234"></div>
+    <div class="form-group"><div class="form-label">Email</div><input class="form-input" id="eEmail" type="email" placeholder="name@example.com"></div>
 
     <div class="section-hdr">Tags</div>
     <div class="toggle-row">
@@ -538,7 +540,7 @@
       <div style="font-size:17px;color:var(--c-label);" id="sUser"></div>
       <button class="btn-tinted" onclick="doLogout()" style="margin-top:8px;height:36px;border-radius:8px;width:100%;font-size:15px;font-weight:600;border:none;cursor:pointer;">Sign Out</button>
     </div>
-    <div style="padding-top:16px;"><p style="font-size:13px;color:var(--c-tertiary);">hornhüd v3.1 — Synced via Firebase.<br><span id="pinCt">0</span> addresses.</p></div>
+    <div style="padding-top:16px;"><p style="font-size:13px;color:var(--c-tertiary);">hornhüd v3.2 — Synced via Firebase.<br><span id="pinCt">0</span> addresses.</p></div>
   </div>
 </div>
 
@@ -553,10 +555,12 @@
     <div class="help-content">
       <h3>Tagging an Address</h3>
       <p>Zoom in and tap any building outline on the map. If it's already tagged, you'll see its details. If it's new, an edit form opens with the address auto-filled from GPS.</p>
+      <h3>Reading the Map</h3>
+      <p>Buildings are color-coded: <strong>blue</strong> for donkey, <strong>red</strong> for elephant. Favorites get a <strong>gold outline</strong>. Disposition shows as a small emoji (😊 or 😠) on the building.</p>
       <h3>Editing a Record</h3>
       <p>From the detail view, tap <strong>Edit</strong>. Change disposition, affiliation, contacts, dogs, notes, or add your own custom tags.</p>
       <h3>Searching &amp; Filtering</h3>
-      <p>Use the search bar to find addresses or contact names. Tap 🏷️ to filter by tags or stars.</p>
+      <p>Use the search bar to find addresses or contact names. Tap 🏷️ to filter by disposition, affiliation, or stars. Tap <strong>Clear</strong> to reset.</p>
       <h3>Stars</h3>
       <p>Tap the star on any address to mark it. Stars are personal — each user has their own — but visible to everyone.</p>
       <h3>Interactions</h3>
@@ -588,7 +592,7 @@ const MAPBOX_TOKEN = 'pk.eyJ1Ijoibm9haCIsImEiOiJjbW1waW52a20wb3ByMzNwdjg1enozdzJ
 
 let currentUser = null, unsubPins = null;
 let map, markers = {}, pinData = [], activeFilter = 'all';
-let userLng, userLat, showLabels = false;
+let userLng, userLat;
 let eFriendly = '', ePolitical = '', eContacts = [], eDogs = [], eTags = [];
 let curDetailId = null;
 
@@ -635,7 +639,6 @@ function initMap() {
       else { const a=await reverseGeo(lng,lat); openEdit(null,{lng,lat,address:a,bldg:f[0].geometry}); }
     }
   });
-  map.on('zoom',()=>{ const s=map.getZoom()>=17; if(s!==showLabels){showLabels=s;document.getElementById('map').classList.toggle('show-labels',s);} });
   geo.on('geolocate',e=>{userLng=e.coords.longitude;userLat=e.coords.latitude;});
 }
 
@@ -645,14 +648,19 @@ function listenPins() {
     pinData = snap.docs.map(d => {
       const o = {id:d.id,...d.data()};
       if (o.buildingGeometryJSON && !o.buildingGeometry) try{o.buildingGeometry=JSON.parse(o.buildingGeometryJSON);}catch(e){}
-      if (!o.contacts) o.contacts = o.owner ? [{name:o.owner,email:o.email||''}] : [];
+      if (!o.contacts) o.contacts = o.owner ? [{name:o.owner}] : [];
+      // Migrate: if contacts have email but address-level email is missing, pull first one up
+      if (!o.email) {
+        const ce = (o.contacts||[]).find(c=>c.email);
+        if (ce) { o.email = ce.email; }
+      }
       if (!o.dogs) o.dogs = [];
       if (!o.interactions) o.interactions = [];
       if (!o.favorites) o.favorites = {};
       if (!o.customTags) o.customTags = [];
       return o;
     });
-    renderMarkers(); updateBldgColors(); updCt();
+    renderMarkers(); updateBldgLayers(); updCt();
   });
 }
 async function saveToDB(pin) {
@@ -661,48 +669,60 @@ async function saveToDB(pin) {
   await pinsRef.doc(id).set(d,{merge:true});
 }
 
-// ═══════ Building Colors ═══════
-function addBldgLayer() {
+// ═══════ Building Layers: Political fill + Favorites outline ═══════
+function addBldgLayers() {
   if (map.getSource('pbldg')) return;
-  map.addSource('pbldg',{type:'geojson',data:bldgGJ()});
+  // Political fill
+  map.addSource('pbldg',{type:'geojson',data:bldgPoliticalGJ()});
   map.addLayer({id:'pbldg-fill',type:'fill-extrusion',source:'pbldg',paint:{'fill-extrusion-color':['get','color'],'fill-extrusion-opacity':0.45,'fill-extrusion-height':8}});
+  // Favorites outline
+  map.addSource('fbldg',{type:'geojson',data:bldgFavGJ()});
+  map.addLayer({id:'fbldg-outline',type:'line',source:'fbldg',paint:{'line-color':'#c8a951','line-width':3,'line-opacity':0.9}});
 }
-function bldgGJ() {
+function bldgPoliticalGJ() {
   return {type:'FeatureCollection',features:pinData.filter(p=>p.political&&p.buildingGeometry).map(p=>({
     type:'Feature',geometry:p.buildingGeometry,properties:{color:p.political==='donkey'?'#007aff':'#ff3b30'}
   }))};
 }
-function updateBldgColors() { if(!map)return; try{if(!map.getSource('pbldg'))addBldgLayer();else map.getSource('pbldg').setData(bldgGJ());}catch(e){} }
+function bldgFavGJ() {
+  return {type:'FeatureCollection',features:pinData.filter(p=>p.favorites?.[currentUser?.uid]&&p.buildingGeometry).map(p=>({
+    type:'Feature',geometry:p.buildingGeometry,properties:{}
+  }))};
+}
+function updateBldgLayers() {
+  if(!map)return;
+  try {
+    if(!map.getSource('pbldg')) addBldgLayers();
+    else {
+      map.getSource('pbldg').setData(bldgPoliticalGJ());
+      map.getSource('fbldg').setData(bldgFavGJ());
+    }
+  } catch(e){}
+}
 
 // ═══════ Geocode ═══════
 async function reverseGeo(lng,lat) {
   try { const r=await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=address&access_token=${MAPBOX_TOKEN}`); const d=await r.json(); return d.features?.[0]?.place_name||''; } catch(e){return '';}
 }
 
-// ═══════ Markers ═══════
-function mkEmoji(p){return p.friendly==='friendly'?'😊':p.friendly==='not-friendly'?'😠':'🏠';}
-function mkColor(p){return p.friendly==='friendly'?'#34c759':p.friendly==='not-friendly'?'#ff3b30':'#c7c7cc';}
+// ═══════ Markers: simple emoji only ═══════
+function mkEmoji(p){return p.friendly==='friendly'?'😊':p.friendly==='not-friendly'?'😠':'';}
 
 function renderMarkers() {
   Object.values(markers).forEach(m=>m.remove()); markers={};
   pinData.forEach(p=>{
-    const w=document.createElement('div'); w.className='mk-wrap';
-    const pin=document.createElement('div'); pin.className='mk-pin'; pin.style.background=mkColor(p);
-    const em=document.createElement('span'); em.className='mk-emoji'; em.textContent=mkEmoji(p);
-    pin.appendChild(em); w.appendChild(pin);
-
-    // Star
-    const star=document.createElement('div'); star.className='mk-star'+(p.favorites?.[currentUser?.uid]?' vis':''); star.textContent='⭐';
-    w.appendChild(star);
-
-    // Label: emoji + first name
-    const lbl=document.createElement('div'); lbl.className='mk-label';
-    const firstName=(p.contacts||[])[0]?.name?.split(' ')[0]||'';
-    lbl.textContent=firstName?(mkEmoji(p)+' '+firstName):(fmt(p.address)||'');
-    w.appendChild(lbl);
-
-    w.addEventListener('click',e=>{e.stopPropagation();openDetail(p.id);});
-    markers[p.id]=new mapboxgl.Marker({element:w,anchor:'bottom-left'}).setLngLat([p.lng,p.lat]).addTo(map);
+    const emoji = mkEmoji(p);
+    if (!emoji) {
+      // No disposition set — still need a clickable area but invisible
+      const w=document.createElement('div');
+      w.style.cssText='width:20px;height:20px;cursor:pointer;';
+      w.addEventListener('click',e=>{e.stopPropagation();openDetail(p.id);});
+      markers[p.id]=new mapboxgl.Marker({element:w,anchor:'center'}).setLngLat([p.lng,p.lat]).addTo(map);
+    } else {
+      const w=document.createElement('div'); w.className='mk-emoji'; w.textContent=emoji;
+      w.addEventListener('click',e=>{e.stopPropagation();openDetail(p.id);});
+      markers[p.id]=new mapboxgl.Marker({element:w,anchor:'center'}).setLngLat([p.lng,p.lat]).addTo(map);
+    }
   });
   applyFilters();
 }
@@ -717,7 +737,7 @@ function applyFilters() {
     else if(activeFilter==='donkey')ok=p.political==='donkey';
     else if(activeFilter==='elephant')ok=p.political==='elephant';
     else if(activeFilter==='starred')ok=!!p.favorites?.[currentUser?.uid];
-    const names=(p.contacts||[]).map(c=>c.name.toLowerCase()).join(' ');
+    const names=(p.contacts||[]).map(c=>(c.name||'').toLowerCase()).join(' ');
     const sOk=!q||(p.address||'').toLowerCase().includes(q)||names.includes(q)||(p.notes||'').toLowerCase().includes(q);
     m.getElement().style.display=(ok&&sOk)?'':'none';
   });
@@ -728,24 +748,11 @@ function openDetail(id) {
   const p=pinData.find(x=>x.id===id); if(!p)return; curDetailId=id;
   document.getElementById('dAddr').textContent=fmt(p.address)||'No address';
 
-  // Star
+  // Star — instant UI
   const isStar=!!p.favorites?.[currentUser?.uid];
   document.getElementById('starBtn').textContent=isStar?'★':'☆';
-  document.getElementById('starBtn').classList.toggle('active',isStar);
 
-  // Phone (address-level)
-  const phoneEl=document.getElementById('dPhone');
-  if(p.phone){phoneEl.innerHTML=`<div class="phone-row"><div class="phone-icon">📞</div><a class="phone-link" href="tel:${esc(p.phone)}">${esc(p.phone)}</a></div>`;phoneEl.style.display='';}
-  else phoneEl.style.display='none';
-
-  // Contacts
-  const cs=p.contacts||[];
-  document.getElementById('dContacts').innerHTML=cs.length?cs.map(c=>`<div class="detail-contact"><div class="dc-avatar">👤</div><div class="dc-info"><div class="dc-name">${esc(c.name)||'Unnamed'}</div>${c.email?`<a class="dc-email" href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:''}</div></div>`).join(''):'<div class="detail-val empty">No contacts</div>';
-
-  // Meta
-  document.getElementById('dMeta').textContent=p.createdByName?`Added by ${p.createdByName}`:'';
-
-  // Tags
+  // Tags — right below address
   let tags='';
   if(p.friendly==='friendly')tags+='<span class="dtag friendly">😊 Friendly</span>';
   else if(p.friendly==='not-friendly')tags+='<span class="dtag not-friendly">😠 Not Friendly</span>';
@@ -754,8 +761,18 @@ function openDetail(id) {
   (p.customTags||[]).forEach(t=>tags+=`<span class="dtag custom">${esc(t)}</span>`);
   document.getElementById('dTags').innerHTML=tags||'<div class="detail-val empty">No tags</div>';
 
+  // Phone & Email (address-level)
+  let infoHtml='';
+  if(p.phone) infoHtml+=`<div class="info-row"><div class="info-icon phone-bg">📞</div><a class="info-link" href="tel:${esc(p.phone)}">${esc(p.phone)}</a></div>`;
+  if(p.email) infoHtml+=`<div class="info-row"><div class="info-icon email-bg">✉️</div><a class="info-link" href="mailto:${esc(p.email)}">${esc(p.email)}</a></div>`;
+  document.getElementById('dContactInfo').innerHTML=infoHtml;
+
+  // Contacts (names only)
+  const cs=p.contacts||[];
+  document.getElementById('dContacts').innerHTML=cs.filter(c=>c.name).length?cs.filter(c=>c.name).map(c=>`<div class="detail-contact"><div class="dc-avatar">👤</div><div class="dc-info"><div class="dc-name">${esc(c.name)}</div></div></div>`).join(''):'<div class="detail-val empty">No contacts</div>';
+
   // Dogs
-  document.getElementById('dDogs').innerHTML=(p.dogs||[]).length?(p.dogs||[]).map(d=>`<div class="dog-row"><span style="font-size:20px;">🐕</span><div><div style="font-size:17px;font-weight:600;">${esc(d.name)||'Unnamed'}</div>${d.breed?'<div style="font-size:15px;color:var(--c-secondary);">'+esc(d.breed)+'</div>':''}</div></div>`).join(''):'<div class="detail-val empty">No dogs</div>';
+  document.getElementById('dDogs').innerHTML=(p.dogs||[]).length?(p.dogs||[]).map(d=>`<div class="dog-row"><span style="font-size:18px;">🐕</span><div><div style="font-size:17px;font-weight:600;">${esc(d.name)||'Unnamed'}</div>${d.breed?'<div style="font-size:15px;color:var(--c-secondary);">'+esc(d.breed)+'</div>':''}</div></div>`).join(''):'<div class="detail-val empty">No dogs</div>';
 
   // Notes
   const nEl=document.getElementById('dNotes');
@@ -765,19 +782,25 @@ function openDetail(id) {
   const ints=(p.interactions||[]).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   document.getElementById('dInts').innerHTML=ints.length?ints.map(i=>`<div class="interaction-row"><div class="int-note">${esc(i.note)}</div><div class="int-meta">${i.userName||'Unknown'} · ${i.date?new Date(i.date).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}</div></div>`).join(''):'<div class="detail-val empty">None yet</div>';
 
+  // Meta
+  document.getElementById('dMeta').textContent=p.createdByName?`Added by ${p.createdByName}`:'';
+
   document.getElementById('detailPanel').classList.add('open');
 }
 function closePanel(id){document.getElementById(id).classList.remove('open');}
 function editFromDetail(){const id=curDetailId;closePanel('detailPanel');setTimeout(()=>openEdit(id),120);}
 
-// ═══════ Stars ═══════
+// ═══════ Stars — optimistic UI ═══════
 async function toggleStar() {
   if(!curDetailId||!currentUser)return;
   const p=pinData.find(x=>x.id===curDetailId); if(!p)return;
   const favs=p.favorites||{};
-  favs[currentUser.uid]=!favs[currentUser.uid];
+  const newVal=!favs[currentUser.uid];
+  favs[currentUser.uid]=newVal;
+  // Instant feedback
+  document.getElementById('starBtn').textContent=newVal?'★':'☆';
   await pinsRef.doc(curDetailId).update({favorites:favs});
-  showToast(favs[currentUser.uid]?'Starred':'Unstarred');
+  showToast(newVal?'Starred':'Unstarred');
 }
 
 // ═══════ Interactions ═══════
@@ -798,10 +821,20 @@ function setTog(g,v,btn){
 }
 function syncTog(cId,v){document.getElementById(cId).querySelectorAll('.seg-opt').forEach(b=>b.classList.toggle('sel',b.dataset.val===v));}
 
-function renderEC(){document.getElementById('eContacts').innerHTML=eContacts.map((c,i)=>`<div class="edit-card"><button class="rm-btn" onclick="eContacts.splice(${i},1);renderEC()">✕</button><input class="form-input" placeholder="Name" value="${esc(c.name)}" onchange="eContacts[${i}].name=this.value"><input class="form-input" placeholder="Email" value="${esc(c.email)}" onchange="eContacts[${i}].email=this.value"></div>`).join('');}
-function addCF(){eContacts.push({name:'',email:''});renderEC();}
+// Contacts edit — name only, iOS minus-circle delete
+function renderEC(){
+  document.getElementById('eContacts').innerHTML=eContacts.map((c,i)=>
+    `<div class="edit-card"><button class="rm-circle" onclick="eContacts.splice(${i},1);renderEC()">−</button><div class="card-fields"><input class="form-input" placeholder="Name" value="${esc(c.name)}" onchange="eContacts[${i}].name=this.value"></div></div>`
+  ).join('');
+}
+function addCF(){eContacts.push({name:''});renderEC();}
 
-function renderED(){document.getElementById('eDogs').innerHTML=eDogs.map((d,i)=>`<div class="edit-card"><button class="rm-btn" onclick="eDogs.splice(${i},1);renderED()">✕</button><input class="form-input" placeholder="Dog name" value="${esc(d.name)}" onchange="eDogs[${i}].name=this.value"><input class="form-input" placeholder="Breed" value="${esc(d.breed)}" onchange="eDogs[${i}].breed=this.value"></div>`).join('');}
+// Dogs edit — iOS minus-circle delete, "Breed or note" placeholder
+function renderED(){
+  document.getElementById('eDogs').innerHTML=eDogs.map((d,i)=>
+    `<div class="edit-card"><button class="rm-circle" onclick="eDogs.splice(${i},1);renderED()">−</button><div class="card-fields"><input class="form-input" placeholder="Name" value="${esc(d.name)}" onchange="eDogs[${i}].name=this.value"><input class="form-input" placeholder="Breed or note" value="${esc(d.breed)}" onchange="eDogs[${i}].breed=this.value"></div></div>`
+  ).join('');
+}
 function addDF(){eDogs.push({name:'',breed:''});renderED();}
 
 function renderETags(){document.getElementById('eTagChips').innerHTML=eTags.map((t,i)=>`<div class="tag-chip">${esc(t)} <span class="tag-x" onclick="eTags.splice(${i},1);renderETags()">✕</span></div>`).join('');}
@@ -812,18 +845,20 @@ function openEdit(id,defaults){
   if(isNew){
     document.getElementById('eTitle').textContent='New Entry';document.getElementById('eId').value='';
     document.getElementById('eAddr').value=fmt(defaults?.address||'');document.getElementById('ePhone').value='';
+    document.getElementById('eEmail').value='';
     document.getElementById('eNotes').value='';document.getElementById('eDelBtn').style.display='none';
-    eFriendly='';ePolitical='';eContacts=[{name:'',email:''}];eDogs=[];eTags=[];
+    eFriendly='';ePolitical='';eContacts=[{name:''}];eDogs=[];eTags=[];
     panel.dataset.lng=defaults?.lng||'';panel.dataset.lat=defaults?.lat||'';
     panel.dataset.bldg=defaults?.bldg?JSON.stringify(defaults.bldg):'';
   } else {
     const p=pinData.find(x=>x.id===id);if(!p)return;
     document.getElementById('eTitle').textContent='Edit Record';document.getElementById('eId').value=p.id;
     document.getElementById('eAddr').value=fmt(p.address);document.getElementById('ePhone').value=p.phone||'';
+    document.getElementById('eEmail').value=p.email||'';
     document.getElementById('eNotes').value=p.notes||'';document.getElementById('eDelBtn').style.display='';
     eFriendly=p.friendly||'';ePolitical=p.political||'';
-    eContacts=(p.contacts||[]).map(c=>({...c}));eDogs=(p.dogs||[]).map(d=>({...d}));eTags=[...(p.customTags||[])];
-    if(!eContacts.length)eContacts.push({name:'',email:''});
+    eContacts=(p.contacts||[]).map(c=>({name:c.name||''}));eDogs=(p.dogs||[]).map(d=>({...d}));eTags=[...(p.customTags||[])];
+    if(!eContacts.length)eContacts.push({name:''});
     panel.dataset.lng=p.lng;panel.dataset.lat=p.lat;
     panel.dataset.bldg=p.buildingGeometry?JSON.stringify(p.buildingGeometry):'';
   }
@@ -836,13 +871,16 @@ async function savePin(){
   const exId=document.getElementById('eId').value;
   const id=exId||('pin_'+Date.now()+'_'+Math.random().toString(36).substr(2,5));
   // Read DOM
-  document.getElementById('eContacts').querySelectorAll('.edit-card').forEach((c,i)=>{const inp=c.querySelectorAll('input');if(eContacts[i]){eContacts[i].name=inp[0].value.trim();eContacts[i].email=inp[1].value.trim();}});
+  document.getElementById('eContacts').querySelectorAll('.edit-card').forEach((c,i)=>{const inp=c.querySelectorAll('input');if(eContacts[i]){eContacts[i].name=inp[0].value.trim();}});
   document.getElementById('eDogs').querySelectorAll('.edit-card').forEach((c,i)=>{const inp=c.querySelectorAll('input');if(eDogs[i]){eDogs[i].name=inp[0].value.trim();eDogs[i].breed=inp[1].value.trim();}});
   let bGeom=null;try{bGeom=JSON.parse(panel.dataset.bldg);}catch(e){}
   if(!bGeom){const ex=pinData.find(p=>p.id===id);if(ex?.buildingGeometry)bGeom=ex.buildingGeometry;}
   const existing=pinData.find(p=>p.id===id);
-  const pin={id,address:document.getElementById('eAddr').value.trim(),phone:document.getElementById('ePhone').value.trim(),
-    friendly:eFriendly,political:ePolitical,contacts:eContacts.filter(c=>c.name||c.email),dogs:eDogs.filter(d=>d.name||d.breed),
+  const pin={id,address:document.getElementById('eAddr').value.trim(),
+    phone:document.getElementById('ePhone').value.trim(),
+    email:document.getElementById('eEmail').value.trim(),
+    friendly:eFriendly,political:ePolitical,
+    contacts:eContacts.filter(c=>c.name),dogs:eDogs.filter(d=>d.name||d.breed),
     customTags:eTags,notes:document.getElementById('eNotes').value.trim(),
     lng:parseFloat(panel.dataset.lng),lat:parseFloat(panel.dataset.lat),buildingGeometry:bGeom,
     interactions:existing?.interactions||[],favorites:existing?.favorites||{},
@@ -862,7 +900,7 @@ function exportVC(){
   const cs=p.contacts||[];if(!cs.length){showToast('No contacts');return;}
   const c=cs[0];const parts=(c.name||'').split(' ');const last=parts.length>1?parts.pop():'';const first=parts.join(' ');
   let vc=`BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nN:${last};${first};;;\n`;
-  if(p.phone)vc+=`TEL;TYPE=CELL:${p.phone}\n`;if(c.email)vc+=`EMAIL:${c.email}\n`;
+  if(p.phone)vc+=`TEL;TYPE=CELL:${p.phone}\n`;if(p.email)vc+=`EMAIL:${p.email}\n`;
   if(p.address)vc+=`ADR;TYPE=HOME:;;${fmt(p.address)};Portland;OR;;\n`;
   vc+=`END:VCARD`;
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([vc],{type:'text/vcard'}));a.download=`${(c.name||'contact').replace(/\s+/g,'_')}.vcf`;a.click();showToast('vCard saved');
@@ -882,29 +920,43 @@ function openListView(){
     if(activeFilter==='friendly')ok=p.friendly==='friendly';else if(activeFilter==='not-friendly')ok=p.friendly==='not-friendly';
     else if(activeFilter==='donkey')ok=p.political==='donkey';else if(activeFilter==='elephant')ok=p.political==='elephant';
     else if(activeFilter==='starred')ok=!!p.favorites?.[currentUser?.uid];
-    const nm=(p.contacts||[]).map(c=>c.name.toLowerCase()).join(' ');
+    const nm=(p.contacts||[]).map(c=>(c.name||'').toLowerCase()).join(' ');
     return ok&&(!q||(p.address||'').toLowerCase().includes(q)||nm.includes(q));
   }).sort((a,b)=>fmt(a.address).localeCompare(fmt(b.address)));
   document.getElementById('listN').textContent=fl.length;
   document.getElementById('listC').innerHTML=fl.length?fl.map(p=>{
+    const emoji=p.friendly==='friendly'?'😊':p.friendly==='not-friendly'?'😠':'🏠';
     const bg=p.friendly==='friendly'?'f':p.friendly==='not-friendly'?'nf':'n';
     let bd='';if(p.political==='donkey')bd+='🫏';if(p.political==='elephant')bd+='🐘';if((p.dogs||[]).length)bd+='🐕';if(p.favorites?.[currentUser?.uid])bd+='⭐';
-    return `<div class="list-item" onclick="flyTo('${p.id}')"><div class="li-icon ${bg}">${mkEmoji(p)}</div><div class="li-info"><div class="li-addr">${esc(fmt(p.address)||'No address')}</div><div class="li-sub">${esc((p.contacts||[])[0]?.name)||'No contact'}</div></div><div class="li-badges">${bd}</div></div>`;
+    return `<div class="list-item" onclick="flyTo('${p.id}')"><div class="li-icon ${bg}">${emoji}</div><div class="li-info"><div class="li-addr">${esc(fmt(p.address)||'No address')}</div><div class="li-sub">${esc((p.contacts||[])[0]?.name)||'No contact'}</div></div><div class="li-badges">${bd}</div></div>`;
   }).join(''):'<p style="text-align:center;color:var(--c-tertiary);padding:28px 0;">No addresses.</p>';
   document.getElementById('listPanel').classList.add('open');
 }
 function flyTo(id){const p=pinData.find(x=>x.id===id);if(!p)return;closePanel('listPanel');map.flyTo({center:[p.lng,p.lat],zoom:19});setTimeout(()=>openDetail(id),600);}
 
-// ═══════ Filters / Settings / Utils ═══════
+// ═══════ Filters ═══════
 function toggleFilters(){document.getElementById('filterBar').classList.toggle('visible');}
-function setFilter(f){activeFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===f));applyFilters();}
+function setFilter(f){
+  if(activeFilter===f){clearFilters();return;}
+  activeFilter=f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===f));
+  document.getElementById('filterClear').classList.remove('hidden');
+  applyFilters();
+}
+function clearFilters(){
+  activeFilter='all';
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  document.getElementById('filterClear').classList.add('hidden');
+  applyFilters();
+}
+
+// ═══════ Settings / Utils ═══════
 function openSettings(){document.getElementById('sUser').textContent=currentUser?.email||'';document.getElementById('settingsPanel').classList.add('open');}
 function openHelp(){document.getElementById('helpPanel').classList.add('open');}
 function updCt(){const el=document.getElementById('pinCt');if(el)el.textContent=pinData.length;}
 function closeOv(e,id){if(e.target===document.getElementById(id))closePanel(id);}
 function esc(s){if(!s)return '';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function showToast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2000);}
-function saveSettings(){closePanel('settingsPanel');}
 
 // ═══════ Export / Import ═══════
 function exportJSON(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pinData,null,2)],{type:'application/json'}));a.download=`hornhud-${new Date().toISOString().slice(0,10)}.json`;a.click();showToast('Exported');}
@@ -913,7 +965,7 @@ async function importJSON(ev){
   try{const data=JSON.parse(await file.text());if(!Array.isArray(data))throw 0;let c=0;
   for(const pin of data){if(!pin.lng||!pin.lat)continue;if(!pin.id)pin.id='pin_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
   if(pin.category){pin.friendly=(pin.category==='friendly'||pin.category==='not-friendly')?pin.category:'';delete pin.category;}
-  if(!pin.contacts)pin.contacts=pin.owner?[{name:pin.owner,email:pin.email||''}]:[];if(!pin.dogs)pin.dogs=[];if(!pin.political)pin.political='';
+  if(!pin.contacts)pin.contacts=pin.owner?[{name:pin.owner}]:[];if(!pin.dogs)pin.dogs=[];if(!pin.political)pin.political='';
   if(!pin.interactions)pin.interactions=[];if(!pin.favorites)pin.favorites={};if(!pin.customTags)pin.customTags=[];
   if(!pin.createdBy){pin.createdBy=currentUser?.uid;pin.createdByName=uname();}
   await saveToDB(pin);c++;}showToast(`Imported ${c}`);}catch(e){showToast('Import failed');}ev.target.value='';

@@ -8,7 +8,6 @@ const ASSETS = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js'
 ];
 
 self.addEventListener('install', (e) => {
@@ -24,7 +23,6 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   // Network-first for Firebase and Mapbox API calls
   if (e.request.url.includes('firestore.googleapis.com') ||
-      e.request.url.includes('firebasestorage.googleapis.com') ||
       e.request.url.includes('identitytoolkit.googleapis.com') ||
       e.request.url.includes('api.mapbox.com/geocoding') ||
       e.request.url.includes('api.mapbox.com/v4')) {

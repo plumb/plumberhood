@@ -14,7 +14,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
   <style>
     :root {
       --text-primary: #1a1a1a;
@@ -221,22 +220,6 @@
     .interaction-note { font-size: 14px; color: var(--text-primary); }
     .interaction-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
 
-    /* Photo gallery */
-    .photo-gallery {
-      display: flex; gap: 8px; overflow-x: auto; padding: 4px 0;
-      -webkit-overflow-scrolling: touch;
-    }
-    .photo-thumb {
-      width: 80px; height: 80px; border-radius: var(--radius-sm); object-fit: cover;
-      flex-shrink: 0; cursor: pointer; border: 1px solid var(--border);
-    }
-    .photo-thumb:active { opacity: 0.8; }
-    .photo-add-btn {
-      width: 80px; height: 80px; border-radius: var(--radius-sm); border: 1.5px dashed var(--border);
-      background: transparent; font-size: 24px; color: var(--text-tertiary);
-      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .photo-add-btn:active { background: var(--bg-secondary); }
 
     /* Edit cards (contacts, dogs) */
     .edit-card {
@@ -356,13 +339,6 @@
     }
     .marker-fav.active { display: flex; }
 
-    /* Photo viewer */
-    .photo-viewer {
-      position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.9);
-      display: none; align-items: center; justify-content: center; cursor: pointer;
-    }
-    .photo-viewer.open { display: flex; }
-    .photo-viewer img { max-width: 95%; max-height: 90vh; object-fit: contain; border-radius: 4px; }
 
     /* Help page */
     .help-content h3 { font-size: 16px; font-weight: 700; margin: 18px 0 6px; color: var(--text-primary); }
@@ -433,11 +409,6 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Photo Viewer -->
-<div class="photo-viewer" id="photoViewer" onclick="this.classList.remove('open')">
-  <img id="photoViewerImg" src="">
-</div>
-
 <!-- ─── Detail Panel ─── -->
 <div class="panel-overlay" id="detailPanel" onclick="closeOnOverlay(event,'detailPanel')">
   <div class="panel">
@@ -462,11 +433,6 @@
     <div class="detail-section" id="detailDogsSec">
       <div class="detail-label">Dogs</div>
       <div id="detailDogs"></div>
-    </div>
-
-    <div class="detail-section" id="detailPhotosSec">
-      <div class="detail-label">Photos</div>
-      <div class="photo-gallery" id="detailPhotos"></div>
     </div>
 
     <div class="detail-section" id="detailNotesSec">
@@ -543,11 +509,6 @@
     <div class="section-title">Dogs</div>
     <div id="editDogs"></div>
     <button class="add-btn" onclick="addDogField()">+ Add Dog</button>
-
-    <div class="section-title">Photos</div>
-    <div class="photo-gallery" id="editPhotoGallery"></div>
-    <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="uploadPhoto(event)">
-    <button class="add-btn" onclick="document.getElementById('photoInput').click()" id="uploadPhotoBtn">+ Add Photo</button>
 
     <label>Notes</label>
     <textarea id="editNotes" placeholder="Anything else..."></textarea>
@@ -628,7 +589,7 @@
       <p>Zoom in and tap any building on the map. If it's already tagged, you'll see its details. If it's new, an edit form opens with the address auto-filled.</p>
 
       <h3>Editing a Record</h3>
-      <p>From the detail view, tap <strong>Edit</strong> at the bottom. You can change the disposition (😊/😠), affiliation (🫏/🐘), add contacts, dogs, photos, and notes.</p>
+      <p>From the detail view, tap <strong>Edit</strong> at the bottom. You can change the disposition (😊/😠), affiliation (🫏/🐘), add contacts, dogs, and notes.</p>
 
       <h3>The + Button</h3>
       <p>If you don't see a building outline (e.g. you're standing in front of a house), tap <strong>+</strong> at the bottom right. It uses your GPS to create an entry for wherever you are.</p>
@@ -641,9 +602,6 @@
 
       <h3>Interactions</h3>
       <p>Keep a log of when you connected with someone. In the detail view, tap <strong>+ Log</strong> to add a timestamped note. Each entry shows who logged it.</p>
-
-      <h3>Photos</h3>
-      <p>In edit mode, tap <strong>+ Add Photo</strong> to attach images (house, yard, pets, etc). Photos are stored in the cloud and visible to both users.</p>
 
       <h3>Importing &amp; Exporting Data</h3>
       <div class="help-step"><div class="step-num">1</div><div class="step-text">Open the <strong>List</strong> view from the bottom bar.</div></div>
@@ -674,7 +632,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const fsdb = firebase.firestore();
-const storage = firebase.storage();
 const pinsRef = fsdb.collection('pins');
 
 let currentUser = null;
@@ -755,7 +712,7 @@ let map, markers = {}, pinData = [], activeFilter = 'all';
 let userLng, userLat, showCards = false;
 let editFriendly = '', editPolitical = '';
 let currentDetailId = null;
-let editContactsList = [], editDogsList = [], editPhotosList = [];
+let editContactsList = [], editDogsList = [];
 
 // ════════════════════════════════════════════
 // Map
@@ -810,7 +767,14 @@ function findNearby(lng, lat) {
 // ════════════════════════════════════════════
 function listenToPins() {
   unsubPins = pinsRef.onSnapshot(snap => {
-    pinData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    pinData = snap.docs.map(d => {
+      const data = { id: d.id, ...d.data() };
+      // Parse buildingGeometry back from JSON string
+      if (data.buildingGeometryJSON && !data.buildingGeometry) {
+        try { data.buildingGeometry = JSON.parse(data.buildingGeometryJSON); } catch(e) {}
+      }
+      return data;
+    });
     renderAllMarkers();
     updateBuildingColors();
     updatePinCount();
@@ -819,6 +783,11 @@ function listenToPins() {
 
 async function savePinToDB(pin) {
   const { id, ...data } = pin;
+  // Stringify buildingGeometry — Firestore can't store nested arrays
+  if (data.buildingGeometry && typeof data.buildingGeometry === 'object') {
+    data.buildingGeometryJSON = JSON.stringify(data.buildingGeometry);
+    delete data.buildingGeometry;
+  }
   await pinsRef.doc(id).set(data, { merge: true });
 }
 
@@ -977,11 +946,6 @@ function openDetailPanel(id) {
     ? '<span class="detail-value empty">No dogs</span>'
     : dogs.map(d => `<div class="dog-card"><div class="dog-emoji">🐕</div><div><div class="dog-name">${esc(d.name)||'Unnamed'}</div>${d.breed?'<div class="dog-breed">'+esc(d.breed)+'</div>':''}</div></div>`).join('');
 
-  // Photos
-  const photos = pin.photos || [];
-  let photoHtml = photos.map(p => `<img class="photo-thumb" src="${p.url}" onclick="viewPhoto('${p.url}')">`).join('');
-  document.getElementById('detailPhotos').innerHTML = photoHtml || '<span class="detail-value empty">No photos</span>';
-
   // Notes
   const nEl = document.getElementById('detailNotes');
   if (pin.notes?.trim()) { nEl.textContent = pin.notes; nEl.classList.remove('empty'); }
@@ -1006,11 +970,6 @@ function openDetailPanel(id) {
 
 function closeDetailPanel() { document.getElementById('detailPanel').classList.remove('open'); currentDetailId = null; }
 function editFromDetail() { const id = currentDetailId; closeDetailPanel(); setTimeout(() => openEditPanel(id), 120); }
-
-function viewPhoto(url) {
-  document.getElementById('photoViewerImg').src = url;
-  document.getElementById('photoViewer').classList.add('open');
-}
 
 // ════════════════════════════════════════════
 // Favorites
@@ -1078,31 +1037,6 @@ function renderEditDogs() {
 }
 function addDogField() { editDogsList.push({name:'',breed:''}); renderEditDogs(); }
 
-function renderEditPhotos() {
-  document.getElementById('editPhotoGallery').innerHTML = editPhotosList.map((p, i) =>
-    `<img class="photo-thumb" src="${p.url}" onclick="editPhotosList.splice(${i},1);renderEditPhotos()">`
-  ).join('');
-}
-
-async function uploadPhoto(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const id = document.getElementById('editId').value || 'temp_' + Date.now();
-  const btn = document.getElementById('uploadPhotoBtn');
-  btn.textContent = 'Uploading...'; btn.disabled = true;
-  try {
-    const path = `photos/${id}/${Date.now()}_${file.name}`;
-    const ref = storage.ref(path);
-    await ref.put(file);
-    const url = await ref.getDownloadURL();
-    editPhotosList.push({ url, storagePath: path, uploadedBy: currentUser?.uid, uploadedByName: userName(), uploadedAt: new Date().toISOString() });
-    renderEditPhotos();
-    showToast('Photo uploaded');
-  } catch(e) { showToast('Upload failed'); console.error(e); }
-  btn.textContent = '+ Add Photo'; btn.disabled = false;
-  event.target.value = '';
-}
-
 function openEditPanel(id, defaults) {
   const isNew = !id;
   const panel = document.getElementById('editPanel');
@@ -1115,7 +1049,6 @@ function openEditPanel(id, defaults) {
     editFriendly = ''; editPolitical = '';
     editContactsList = [{name:'',phone:'',email:''}];
     editDogsList = [];
-    editPhotosList = [];
     panel.dataset.lng = defaults?.lng || '';
     panel.dataset.lat = defaults?.lat || '';
     panel.dataset.buildingGeometry = defaults?.buildingGeometry ? JSON.stringify(defaults.buildingGeometry) : '';
@@ -1130,7 +1063,6 @@ function openEditPanel(id, defaults) {
     editFriendly = pin.friendly || ''; editPolitical = pin.political || '';
     editContactsList = (pin.contacts || []).map(c => ({...c}));
     editDogsList = (pin.dogs || []).map(d => ({...d}));
-    editPhotosList = (pin.photos || []).map(p => ({...p}));
     if (!editContactsList.length) editContactsList.push({name:'',phone:'',email:''});
     panel.dataset.lng = pin.lng;
     panel.dataset.lat = pin.lat;
@@ -1138,7 +1070,7 @@ function openEditPanel(id, defaults) {
   }
   syncToggle('toggleFriendly', editFriendly);
   syncToggle('togglePolitical', editPolitical);
-  renderEditContacts(); renderEditDogs(); renderEditPhotos();
+  renderEditContacts(); renderEditDogs();
   panel.classList.add('open');
 }
 function closeEditPanel() { document.getElementById('editPanel').classList.remove('open'); }
@@ -1170,7 +1102,6 @@ async function savePin() {
     address: document.getElementById('editAddress').value.trim(),
     friendly: editFriendly, political: editPolitical,
     contacts: cleanContacts, dogs: cleanDogs,
-    photos: editPhotosList,
     notes: document.getElementById('editNotes').value.trim(),
     lng: parseFloat(panel.dataset.lng), lat: parseFloat(panel.dataset.lat),
     buildingGeometry: bGeom,
@@ -1328,7 +1259,7 @@ async function importData(event) {
       if (pin.category) { pin.friendly = (pin.category==='friendly'||pin.category==='not-friendly') ? pin.category : ''; delete pin.category; }
       if (!pin.contacts) pin.contacts = pin.owner ? [{name:pin.owner,phone:pin.phone||'',email:pin.email||''}] : [];
       if (!pin.dogs) pin.dogs = []; if (!pin.political) pin.political = '';
-      if (!pin.interactions) pin.interactions = []; if (!pin.photos) pin.photos = []; if (!pin.favorites) pin.favorites = {};
+      if (!pin.interactions) pin.interactions = []; if (!pin.favorites) pin.favorites = {};
       if (!pin.createdBy) { pin.createdBy = currentUser?.uid; pin.createdByName = userName(); }
       await savePinToDB(pin); c++;
     }

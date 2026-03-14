@@ -16,1262 +16,910 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
     :root {
-      --text-primary: #1a1a1a;
-      --text-secondary: #6b7280;
-      --text-tertiary: #9ca3af;
-      --text-faint: #d1d5db;
-      --bg: #ffffff;
-      --bg-secondary: #f9fafb;
-      --bg-tertiary: #f3f4f6;
-      --border: #e5e7eb;
-      --border-light: #f3f4f6;
-      --blue: #3b82f6;
-      --blue-dark: #2563eb;
-      --green: #22c55e;
-      --red: #ef4444;
-      --pol-blue: #2563eb;
-      --pol-red: #dc2626;
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 20px;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.07);
-      --shadow-lg: 0 8px 24px rgba(0,0,0,0.10);
+      --c-label: #1c1c1e;
+      --c-secondary: #8e8e93;
+      --c-tertiary: #aeaeb2;
+      --c-quaternary: #c7c7cc;
+      --c-separator: rgba(60,60,67,0.12);
+      --c-bg: #ffffff;
+      --c-bg2: #f2f2f7;
+      --c-bg3: #e5e5ea;
+      --c-blue: #007aff;
+      --c-red: #ff3b30;
+      --c-green: #34c759;
+      --c-orange: #ff9500;
+      --c-pol-blue: #007aff;
+      --c-pol-red: #ff3b30;
+      --safe-top: env(safe-area-inset-top, 47px);
+      --safe-bottom: env(safe-area-inset-bottom, 34px);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-family: -apple-system, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
       overflow: hidden; height: 100vh; height: -webkit-fill-available;
-      -webkit-tap-highlight-color: transparent; color: var(--text-primary);
-      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent; color: var(--c-label);
+      -webkit-font-smoothing: antialiased; background: var(--c-bg);
     }
     #map { width: 100%; height: 100vh; height: -webkit-fill-available; }
-    .mapboxgl-ctrl-top-right { top: 60px !important; }
+    .mapboxgl-ctrl-top-right { top: calc(var(--safe-top) + 52px) !important; right: 8px !important; }
 
-    /* ── Top bar (compact) ── */
+    /* ── Top bar (HIG nav bar: 44pt + safe area) ── */
     .top-bar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-      background: rgba(255,255,255,0.95); backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      padding: 48px 12px 8px; display: flex; align-items: center; gap: 8px;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
+      background: rgba(249,249,249,0.94); backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      padding: calc(var(--safe-top) + 4px) 16px 8px; display: flex; align-items: center; gap: 8px;
+      border-bottom: 0.5px solid var(--c-separator);
     }
     .top-bar.hidden { display: none; }
     .search-wrap { flex: 1; }
     .search-wrap input {
-      width: 100%; padding: 9px 12px; border-radius: var(--radius-md);
-      border: 1px solid var(--border); font-size: 15px; background: var(--bg-secondary);
-      color: var(--text-primary); transition: 0.2s;
+      width: 100%; padding: 8px 12px; border-radius: 10px; border: none;
+      font-size: 17px; background: rgba(142,142,147,0.12); color: var(--c-label);
     }
-    .search-wrap input::placeholder { color: var(--text-tertiary); }
-    .search-wrap input:focus { background: var(--bg); border-color: var(--blue); outline: none; }
-    .icon-btn {
-      width: 36px; height: 36px; border-radius: 50%; border: none;
-      background: var(--bg-tertiary); font-size: 16px; display: flex; align-items: center;
-      justify-content: center; cursor: pointer; flex-shrink: 0; transition: 0.12s;
+    .search-wrap input::placeholder { color: var(--c-tertiary); }
+    .search-wrap input:focus { outline: none; }
+    .nav-btn {
+      min-width: 44px; height: 44px; border-radius: 22px; border: none;
+      background: transparent; font-size: 17px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; color: var(--c-blue); flex-shrink: 0;
     }
-    .icon-btn:active { background: var(--border); transform: scale(0.93); }
+    .nav-btn:active { opacity: 0.4; }
 
     /* ── Filter bar ── */
     .filter-bar {
-      position: fixed; top: 92px; left: 0; right: 0; z-index: 8;
-      padding: 6px 12px; display: none; gap: 5px; overflow-x: auto;
-      background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      position: fixed; top: calc(var(--safe-top) + 52px); left: 0; right: 0; z-index: 8;
+      padding: 8px 16px; display: none; gap: 6px; overflow-x: auto;
+      background: rgba(249,249,249,0.94); backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
     }
     .filter-bar.visible { display: flex; }
     .filter-chip {
-      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
-      border: 1.5px solid var(--border); background: var(--bg); white-space: nowrap;
-      cursor: pointer; color: var(--text-secondary); transition: 0.15s;
+      padding: 6px 14px; border-radius: 20px; font-size: 15px; font-weight: 500;
+      border: none; background: rgba(142,142,147,0.12); white-space: nowrap;
+      cursor: pointer; color: var(--c-secondary);
     }
-    .filter-chip:active { transform: scale(0.95); }
-    .filter-chip.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .filter-chip:active { opacity: 0.6; }
+    .filter-chip.active { background: var(--c-blue); color: #fff; }
 
-    /* ── Bottom bar ── */
+    /* ── Bottom bar (HIG tab bar: 49pt + safe) ── */
     .bottom-bar {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
-      background: rgba(255,255,255,0.95); backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      padding: 8px 12px 30px; display: flex; gap: 8px;
-      border-top: 1px solid rgba(0,0,0,0.05);
+      background: rgba(249,249,249,0.94); backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      padding: 8px 16px calc(var(--safe-bottom) + 4px); display: flex; gap: 8px;
+      border-top: 0.5px solid var(--c-separator);
     }
     .bottom-bar.hidden { display: none; }
     .bottom-bar button {
-      flex: 1; padding: 12px 8px; border-radius: var(--radius-md); border: none;
-      font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.1s;
+      flex: 1; height: 44px; border-radius: 12px; border: none;
+      font-size: 15px; font-weight: 600; cursor: pointer;
     }
-    .bottom-bar button:active { transform: scale(0.97); }
-    .btn-primary { background: var(--blue); color: #fff; }
-    .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); }
+    .bottom-bar button:active { opacity: 0.7; }
+    .btn-filled { background: var(--c-blue); color: #fff; }
+    .btn-tinted { background: rgba(0,122,255,0.12); color: var(--c-blue); }
 
-    /* ── Panels ── */
+    /* ── Panels (HIG sheets) ── */
     .panel-overlay {
       position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.3);
       display: none; align-items: flex-end; justify-content: center;
     }
     .panel-overlay.open { display: flex; }
     .panel {
-      background: var(--bg); border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-      width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
-      padding: 4px 20px 40px;
-      animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1);
+      background: var(--c-bg); border-radius: 12px 12px 0 0; width: 100%;
+      max-width: 500px; max-height: 92vh; overflow-y: auto;
+      padding: 0 16px 40px;
+      animation: slideUp 0.35s cubic-bezier(0.32,0.72,0,1);
       -webkit-overflow-scrolling: touch;
     }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .panel-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto 14px; }
-    .panel h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-    .panel-sub { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
-    .section-title {
-      font-size: 11px; font-weight: 700; color: var(--text-tertiary);
-      text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 0 8px;
-    }
-    .panel label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 12px 0 4px; }
-    .panel input, .panel textarea, .panel select {
-      width: 100%; padding: 11px 12px; border-radius: var(--radius-sm);
-      border: 1px solid var(--border); font-size: 16px; font-family: inherit;
-      background: var(--bg-secondary); color: var(--text-primary); transition: 0.2s;
-    }
-    .panel input::placeholder, .panel textarea::placeholder { color: var(--text-faint); }
-    .panel input:focus, .panel textarea:focus { background: var(--bg); border-color: var(--blue); outline: none; }
-    .panel textarea { resize: vertical; min-height: 60px; }
+    .grab-bar { width: 36px; height: 5px; border-radius: 2.5px; background: var(--c-quaternary); margin: 6px auto 0; }
 
-    /* ── Emoji toggles ── */
-    .toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
-    .toggle-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); flex: 1; }
-    .emoji-toggle { display: flex; gap: 3px; background: var(--bg-tertiary); border-radius: var(--radius-md); padding: 3px; }
-    .emoji-opt {
-      width: 46px; height: 40px; border-radius: var(--radius-sm); border: 2px solid transparent;
+    /* ── Shared form styles ── */
+    .form-group { margin-top: 16px; }
+    .form-label { font-size: 13px; font-weight: 600; color: var(--c-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-input {
+      width: 100%; padding: 11px 12px; border-radius: 10px; border: none;
+      font-size: 17px; font-family: inherit; background: var(--c-bg2); color: var(--c-label);
+    }
+    .form-input::placeholder { color: var(--c-tertiary); }
+    .form-input:focus { outline: 2px solid var(--c-blue); outline-offset: -2px; }
+    textarea.form-input { resize: vertical; min-height: 60px; }
+
+    /* ── Toggle row (HIG segmented style) ── */
+    .toggle-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+    .toggle-label { font-size: 17px; color: var(--c-label); flex: 1; }
+    .seg-toggle { display: flex; background: var(--c-bg2); border-radius: 9px; padding: 2px; }
+    .seg-opt {
+      min-width: 48px; height: 36px; border-radius: 7px; border: none;
       font-size: 20px; background: transparent; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: 0.15s; opacity: 0.3;
+      transition: 0.2s; opacity: 0.3;
     }
-    .emoji-opt:active { transform: scale(0.9); }
-    .emoji-opt.selected { background: var(--bg); box-shadow: var(--shadow-sm); opacity: 1; border-color: transparent; }
-    .emoji-opt.selected[data-val="donkey"] { background: #dbeafe; border-color: var(--pol-blue); }
-    .emoji-opt.selected[data-val="elephant"] { background: #fee2e2; border-color: var(--pol-red); }
+    .seg-opt:active { transform: scale(0.9); }
+    .seg-opt.sel { background: var(--c-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); opacity: 1; }
+    .seg-opt.sel[data-val="donkey"] { background: #dbeafe; box-shadow: 0 0 0 2px var(--c-pol-blue); }
+    .seg-opt.sel[data-val="elephant"] { background: #fee2e2; box-shadow: 0 0 0 2px var(--c-pol-red); }
 
-    /* ── Panel actions ── */
-    .panel-actions { display: flex; gap: 8px; margin-top: 20px; }
-    .panel-actions button {
-      flex: 1; padding: 13px; border-radius: var(--radius-md); border: none;
-      font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.1s;
+    /* ── Section divider ── */
+    .section-hdr {
+      font-size: 13px; font-weight: 600; color: var(--c-secondary); text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 20px 0 6px;
     }
-    .panel-actions button:active { transform: scale(0.97); }
-    .btn-save { background: var(--blue); color: #fff; }
-    .btn-cancel { background: var(--bg-tertiary); color: var(--text-secondary); }
-    .btn-delete { background: #fef2f2; color: var(--red); }
 
-    /* ── Detail view ── */
-    .detail-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
-    .detail-header h2 { flex: 1; }
-    .fav-btn {
-      width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--bg-tertiary);
-      font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: 0.15s;
+    /* ── Edit panel top actions (anchored) ── */
+    .edit-top-bar {
+      position: sticky; top: 0; z-index: 2; background: var(--c-bg);
+      padding: 12px 0 8px; display: flex; align-items: center;
+      border-bottom: 0.5px solid var(--c-separator);
     }
-    .fav-btn:active { transform: scale(0.9); }
-    .fav-btn.active { background: #fef3c7; }
-
-    .detail-section { padding: 12px 0; border-bottom: 1px solid var(--border-light); }
-    .detail-section:last-of-type { border: none; }
-    .detail-label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
-    .detail-value { font-size: 15px; color: var(--text-primary); line-height: 1.5; }
-    .detail-value.empty { color: var(--text-faint); font-style: italic; font-size: 14px; }
-
-    .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-    .tag-pill {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    .edit-top-bar .etb-left { flex: 1; }
+    .edit-top-bar .etb-right { flex: 1; text-align: right; }
+    .edit-top-bar button {
+      border: none; background: transparent; font-size: 17px; cursor: pointer; padding: 8px 4px;
     }
-    .tag-pill.friendly { background: #ecfdf5; color: #166534; }
-    .tag-pill.not-friendly { background: #fef2f2; color: #991b1b; }
-    .tag-pill.donkey { background: #dbeafe; color: #1e40af; }
-    .tag-pill.elephant { background: #fee2e2; color: #991b1b; }
-    .tag-pill .tag-emoji { font-size: 14px; }
+    .edit-top-bar .cancel-btn { color: var(--c-blue); }
+    .edit-top-bar .delete-btn { color: var(--c-red); }
+    .edit-top-bar .save-btn { color: var(--c-blue); font-weight: 700; }
+    .edit-top-bar button:active { opacity: 0.4; }
+    .edit-top-bar .etb-title { font-size: 17px; font-weight: 600; }
 
-    /* Contact card in detail */
-    .contact-card {
-      background: var(--bg-secondary); border-radius: var(--radius-sm);
-      padding: 10px 12px; margin-bottom: 6px;
-    }
-    .contact-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-    .contact-link {
-      display: inline-flex; align-items: center; gap: 4px; font-size: 14px;
-      color: var(--blue); text-decoration: none; margin-top: 3px;
-    }
-    .contact-link:active { opacity: 0.7; }
-
-    /* Dog card in detail */
-    .dog-card {
-      background: var(--bg-secondary); border-radius: var(--radius-sm);
-      padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
-    }
-    .dog-emoji { font-size: 20px; }
-    .dog-name { font-size: 15px; font-weight: 600; }
-    .dog-breed { font-size: 13px; color: var(--text-secondary); }
-
-    /* Interaction log */
-    .interaction-item {
-      padding: 10px 0; border-bottom: 1px solid var(--border-light);
-    }
-    .interaction-item:last-child { border: none; }
-    .interaction-note { font-size: 14px; color: var(--text-primary); }
-    .interaction-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
-
-
-    /* Edit cards (contacts, dogs) */
+    /* ── Cards (contacts, dogs) ── */
     .edit-card {
-      background: var(--bg-secondary); border-radius: var(--radius-sm);
-      padding: 12px; margin-bottom: 8px; position: relative;
+      background: var(--c-bg2); border-radius: 10px; padding: 12px;
+      margin-bottom: 8px; position: relative;
     }
-    .edit-card input { background: var(--bg); margin-bottom: 6px; }
-    .edit-card input:last-of-type { margin-bottom: 0; }
-    .remove-card {
-      position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
-      border-radius: 50%; border: none; background: #fef2f2; color: var(--red);
-      font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    .edit-card .form-input { background: var(--c-bg); margin-bottom: 6px; }
+    .edit-card .form-input:last-of-type { margin-bottom: 0; }
+    .rm-btn {
+      position: absolute; top: 8px; right: 8px; width: 28px; height: 28px;
+      border-radius: 50%; border: none; background: rgba(255,59,48,0.12); color: var(--c-red);
+      font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
-    .add-btn {
-      width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1.5px dashed var(--border);
-      background: transparent; color: var(--text-tertiary); font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: 0.15s;
+    .add-row {
+      width: 100%; padding: 11px; border-radius: 10px; border: none;
+      background: rgba(0,122,255,0.08); color: var(--c-blue); font-size: 15px;
+      font-weight: 600; cursor: pointer; text-align: center;
     }
-    .add-btn:active { background: var(--bg-secondary); }
+    .add-row:active { opacity: 0.6; }
 
-    /* List view */
+    /* ── Custom tags (chips) ── */
+    .tag-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      background: var(--c-bg2); color: var(--c-secondary);
+    }
+    .tag-chip .tag-x { cursor: pointer; opacity: 0.5; font-size: 11px; }
+    .tag-chip .tag-x:active { opacity: 1; }
+    .tag-input-wrap { display: flex; gap: 6px; margin-top: 6px; }
+    .tag-input-wrap input { flex: 1; }
+    .tag-input-wrap button {
+      height: 40px; padding: 0 16px; border-radius: 10px; border: none;
+      background: var(--c-blue); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+
+    /* ── Detail panel ── */
+    .detail-top { display: flex; align-items: flex-start; gap: 8px; padding: 16px 0 4px; }
+    .detail-top h2 { flex: 1; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+    .star-btn {
+      min-width: 44px; height: 44px; border-radius: 22px; border: none;
+      background: transparent; font-size: 24px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .star-btn:active { transform: scale(0.85); }
+    .star-btn.active { }
+    .detail-meta { font-size: 13px; color: var(--c-tertiary); padding-bottom: 12px; }
+
+    /* Contact row in detail */
+    .detail-contact {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 0.5px solid var(--c-separator);
+    }
+    .detail-contact:last-child { border: none; }
+    .dc-avatar {
+      width: 40px; height: 40px; border-radius: 20px; background: var(--c-bg2);
+      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .dc-info { flex: 1; min-width: 0; }
+    .dc-name { font-size: 17px; font-weight: 600; }
+    .dc-email { font-size: 15px; color: var(--c-blue); text-decoration: none; }
+    .dc-email:active { opacity: 0.5; }
+
+    /* Phone row (address-level) */
+    .phone-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 0;
+      border-bottom: 0.5px solid var(--c-separator);
+    }
+    .phone-icon {
+      width: 40px; height: 40px; border-radius: 20px; background: rgba(52,199,89,0.12);
+      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .phone-link { font-size: 17px; color: var(--c-blue); text-decoration: none; font-weight: 500; }
+    .phone-link:active { opacity: 0.5; }
+
+    .detail-section { padding: 12px 0; border-bottom: 0.5px solid var(--c-separator); }
+    .detail-section:last-of-type { border: none; }
+    .detail-slabel { font-size: 13px; font-weight: 600; color: var(--c-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .detail-val { font-size: 17px; color: var(--c-label); line-height: 1.5; }
+    .detail-val.empty { color: var(--c-quaternary); font-style: italic; font-size: 15px; }
+    .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .dtag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+    .dtag.friendly { background: rgba(52,199,89,0.12); color: #1b7a3a; }
+    .dtag.not-friendly { background: rgba(255,59,48,0.12); color: #c92a20; }
+    .dtag.donkey { background: rgba(0,122,255,0.12); color: #0055cc; }
+    .dtag.elephant { background: rgba(255,59,48,0.12); color: #c92a20; }
+    .dtag.custom { background: var(--c-bg2); color: var(--c-secondary); }
+
+    .dog-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 0.5px solid var(--c-separator);
+    }
+    .dog-row:last-child { border: none; }
+
+    .interaction-row { padding: 10px 0; border-bottom: 0.5px solid var(--c-separator); }
+    .interaction-row:last-child { border: none; }
+    .int-note { font-size: 15px; color: var(--c-label); }
+    .int-meta { font-size: 13px; color: var(--c-tertiary); margin-top: 2px; }
+
+    .detail-actions { display: flex; gap: 8px; padding: 16px 0; }
+    .detail-actions button {
+      flex: 1; height: 44px; border-radius: 12px; border: none;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .detail-actions button:active { opacity: 0.7; }
+
+    /* ── List view ── */
     .list-item {
-      padding: 12px 2px; border-bottom: 1px solid var(--border-light);
-      display: flex; align-items: center; gap: 12px; cursor: pointer;
+      display: flex; align-items: center; gap: 12px; padding: 11px 0;
+      border-bottom: 0.5px solid var(--c-separator); cursor: pointer;
     }
-    .list-item:active { background: var(--bg-secondary); border-radius: var(--radius-sm); }
-    .list-icon {
-      width: 38px; height: 38px; border-radius: var(--radius-sm);
-      display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;
+    .list-item:active { opacity: 0.6; }
+    .li-icon {
+      width: 40px; height: 40px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
     }
-    .list-icon.f-bg { background: #ecfdf5; }
-    .list-icon.nf-bg { background: #fef2f2; }
-    .list-icon.n-bg { background: var(--bg-tertiary); }
-    .list-info { flex: 1; min-width: 0; }
-    .list-addr { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .list-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 1px; }
-    .list-badges { display: flex; gap: 3px; flex-shrink: 0; font-size: 15px; }
+    .li-icon.f { background: rgba(52,199,89,0.12); }
+    .li-icon.nf { background: rgba(255,59,48,0.12); }
+    .li-icon.n { background: var(--c-bg2); }
+    .li-info { flex: 1; min-width: 0; }
+    .li-addr { font-size: 17px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .li-sub { font-size: 15px; color: var(--c-secondary); margin-top: 1px; }
+    .li-badges { display: flex; gap: 3px; flex-shrink: 0; font-size: 16px; }
 
-    /* Settings */
-    .settings-row { padding: 12px 0; border-bottom: 1px solid var(--border-light); }
-    .settings-row:last-child { border: none; }
-
-    /* Toast */
+    /* ── Toast ── */
     .toast {
-      position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
-      background: var(--text-primary); color: #fff; padding: 10px 20px;
-      border-radius: var(--radius-md); font-size: 14px; font-weight: 500;
+      position: fixed; top: calc(var(--safe-top) + 60px); left: 50%; transform: translateX(-50%);
+      background: var(--c-label); color: #fff; padding: 10px 20px;
+      border-radius: 12px; font-size: 15px; font-weight: 500;
       z-index: 300; opacity: 0; transition: opacity 0.3s; pointer-events: none;
-      box-shadow: var(--shadow-lg); white-space: nowrap;
+      box-shadow: var(--shadow-lg);
     }
     .toast.show { opacity: 1; }
 
-    /* Login screen */
+    /* ── Auth screen ── */
     .auth-screen {
-      position: fixed; inset: 0; z-index: 500; background: #fff;
+      position: fixed; inset: 0; z-index: 500; background: var(--c-bg);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 24px;
     }
     .auth-screen.hidden { display: none; }
-    .auth-screen h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
-    .auth-screen .subtitle { font-size: 15px; color: var(--text-tertiary); margin-bottom: 32px; }
+    .auth-screen h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; }
+    .auth-screen .subtitle { font-size: 17px; color: var(--c-tertiary); margin-bottom: 32px; }
     .auth-screen input {
-      width: 100%; max-width: 320px; padding: 12px 14px; border-radius: var(--radius-md);
-      border: 1px solid var(--border); font-size: 16px; margin-bottom: 10px;
-      background: var(--bg-secondary);
+      width: 100%; max-width: 320px; padding: 12px; border-radius: 10px;
+      border: none; font-size: 17px; margin-bottom: 8px; background: var(--c-bg2);
     }
-    .auth-screen input:focus { border-color: var(--blue); outline: none; background: #fff; }
+    .auth-screen input:focus { outline: 2px solid var(--c-blue); outline-offset: -2px; }
     .auth-screen button {
-      width: 100%; max-width: 320px; padding: 14px; border-radius: var(--radius-md);
-      border: none; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 6px;
+      width: 100%; max-width: 320px; height: 50px; border-radius: 12px;
+      border: none; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 8px;
     }
-    .auth-screen .auth-error { color: var(--red); font-size: 13px; margin-top: 8px; max-width: 320px; text-align: center; }
+    .auth-err { color: var(--c-red); font-size: 15px; margin-top: 8px; max-width: 320px; text-align: center; }
 
-    /* Setup screen (Mapbox token) */
-    .setup-screen {
-      position: fixed; inset: 0; z-index: 400; background: #fff;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 24px;
-    }
-    .setup-screen.hidden { display: none; }
-    .setup-screen h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-    .setup-screen p { color: var(--text-secondary); text-align: center; margin-bottom: 20px; max-width: 320px; font-size: 15px; line-height: 1.5; }
-    .setup-screen input { width: 100%; max-width: 340px; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); font-size: 16px; background: var(--bg-secondary); }
-    .setup-screen input:focus { border-color: var(--blue); outline: none; background: #fff; }
-    .setup-screen button { width: 100%; max-width: 340px; margin-top: 12px; padding: 14px; border-radius: var(--radius-md); border: none; font-size: 16px; font-weight: 600; cursor: pointer; }
-
-    /* Marker */
-    .marker-wrap { position: relative; cursor: pointer; }
-    .marker-pin {
-      width: 32px; height: 32px; border-radius: 50% 50% 50% 4px;
+    /* ── Marker overlay ── */
+    .mk-wrap { position: relative; cursor: pointer; }
+    .mk-pin {
+      width: 30px; height: 30px; border-radius: 50% 50% 50% 4px;
       border: 2.5px solid #fff; display: flex; align-items: center; justify-content: center;
-      transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: 0.12s;
+      transform: rotate(-45deg); box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     }
-    .marker-pin:active { transform: rotate(-45deg) scale(1.12); }
-    .marker-emoji { transform: rotate(45deg); font-size: 14px; line-height: 1; }
+    .mk-pin:active { transform: rotate(-45deg) scale(1.1); }
+    .mk-emoji { transform: rotate(45deg); font-size: 13px; }
+    .mk-star { position: absolute; top: -5px; right: -5px; font-size: 11px; display: none; }
+    .mk-star.vis { display: block; }
 
-    /* Building info card (shown at high zoom on tagged buildings) */
-    .bldg-card {
-      position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
-      background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border-radius: var(--radius-sm); padding: 5px 9px;
-      box-shadow: var(--shadow-md); pointer-events: none;
-      white-space: nowrap; max-width: 160px; overflow: hidden;
-      display: none; border: 1px solid rgba(0,0,0,0.06);
+    /* Name label overlay */
+    .mk-label {
+      position: absolute; top: 34px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+      font-size: 13px; font-weight: 600; color: var(--c-label);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      pointer-events: none; display: none; max-width: 140px; overflow: hidden; text-overflow: ellipsis;
     }
-    .show-cards .bldg-card { display: block; }
-    .bldg-card-name { font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; }
-    .bldg-card-icons { font-size: 12px; margin-top: 1px; }
+    .show-labels .mk-label { display: block; }
 
-    /* Fav indicator on marker */
-    .marker-fav {
-      position: absolute; top: -4px; right: -4px; font-size: 12px;
-      background: #fef3c7; border-radius: 50%; width: 18px; height: 18px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow-sm); display: none;
-    }
-    .marker-fav.active { display: flex; }
+    /* Settings */
+    .settings-row { padding: 12px 0; border-bottom: 0.5px solid var(--c-separator); }
+    .settings-row:last-child { border: none; }
+    .settings-row label { font-size: 13px; font-weight: 600; color: var(--c-secondary); margin-bottom: 4px; display: block; }
 
-
-    /* Help page */
-    .help-content h3 { font-size: 16px; font-weight: 700; margin: 18px 0 6px; color: var(--text-primary); }
-    .help-content h3:first-child { margin-top: 4px; }
-    .help-content p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
-    .help-content .help-step { display: flex; gap: 10px; margin-bottom: 8px; }
-    .help-content .step-num {
-      width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff;
-      font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .help-content .step-text { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
-
-    /* User badge */
-    .user-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
-      background: var(--bg-tertiary); color: var(--text-secondary);
-    }
+    /* Help */
+    .help-content h3 { font-size: 17px; font-weight: 700; margin: 20px 0 4px; }
+    .help-content h3:first-child { margin-top: 8px; }
+    .help-content p { font-size: 15px; color: var(--c-secondary); line-height: 1.6; margin-bottom: 8px; }
+    .help-step { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+    .step-n { width: 24px; height: 24px; border-radius: 12px; background: var(--c-blue); color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-t { font-size: 15px; color: var(--c-secondary); line-height: 1.5; }
   </style>
 </head>
 <body>
 
-<!-- Auth Screen -->
+<!-- Auth -->
 <div class="auth-screen" id="authScreen">
   <h1>hornhüd</h1>
   <div class="subtitle">know your neighborhood</div>
   <input type="email" id="authEmail" placeholder="Email">
   <input type="password" id="authPass" placeholder="Password">
-  <button class="btn-primary" onclick="doLogin()">Sign In</button>
-  <div class="auth-error" id="authError"></div>
-</div>
-
-<!-- Setup Screen (Mapbox token) -->
-<div class="setup-screen hidden" id="setupScreen">
-  <h2>One more thing</h2>
-  <p>Enter your Mapbox access token. Both users only need to do this once on their device.</p>
-  <input type="text" id="setupToken" placeholder="pk.eyJ1Ijo...">
-  <button class="btn-primary" onclick="saveMapboxToken()">Continue</button>
+  <button class="btn-filled" onclick="doLogin()">Sign In</button>
+  <div class="auth-err" id="authErr"></div>
 </div>
 
 <!-- Top Bar -->
 <div class="top-bar hidden" id="topBar">
-  <div class="search-wrap">
-    <input type="text" id="searchInput" placeholder="Search addresses or names..." oninput="applyFilters()">
-  </div>
-  <button class="icon-btn" onclick="toggleFilters()">🏷️</button>
-  <button class="icon-btn" onclick="openHelp()">?</button>
-  <button class="icon-btn" onclick="openSettings()">⚙️</button>
+  <div class="search-wrap"><input type="text" id="searchInput" placeholder="Search..." oninput="applyFilters()"></div>
+  <button class="nav-btn" onclick="toggleFilters()">🏷️</button>
+  <button class="nav-btn" onclick="openHelp()">?</button>
+  <button class="nav-btn" onclick="openSettings()">⚙️</button>
 </div>
 
-<!-- Filter Bar -->
+<!-- Filters -->
 <div class="filter-bar" id="filterBar">
   <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
   <div class="filter-chip" data-filter="friendly" onclick="setFilter('friendly')">😊 Friendly</div>
-  <div class="filter-chip" data-filter="not-friendly" onclick="setFilter('not-friendly')">😠 Not Friendly</div>
+  <div class="filter-chip" data-filter="not-friendly" onclick="setFilter('not-friendly')">😠 Not</div>
   <div class="filter-chip" data-filter="donkey" onclick="setFilter('donkey')">🫏</div>
   <div class="filter-chip" data-filter="elephant" onclick="setFilter('elephant')">🐘</div>
-  <div class="filter-chip" data-filter="favorited" onclick="setFilter('favorited')">❤️ Favorites</div>
+  <div class="filter-chip" data-filter="starred" onclick="setFilter('starred')">⭐ Starred</div>
 </div>
 
 <div id="map"></div>
 
-<!-- Bottom Bar -->
+<!-- Bottom -->
 <div class="bottom-bar hidden" id="bottomBar">
-  <button class="btn-primary" onclick="goToMyLocation()">📍 My Location</button>
-  <button class="btn-secondary" onclick="openListView()">📋 List</button>
+  <button class="btn-filled" onclick="goToMyLocation()">📍 My Location</button>
+  <button class="btn-tinted" onclick="openListView()">📋 List</button>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- ─── Detail Panel ─── -->
-<div class="panel-overlay" id="detailPanel" onclick="closeOnOverlay(event,'detailPanel')">
+<!-- ── Detail ── -->
+<div class="panel-overlay" id="detailPanel" onclick="closeOv(event,'detailPanel')">
   <div class="panel">
-    <div class="panel-handle"></div>
-    <div class="detail-header">
-      <div>
-        <h2 id="detailAddr"></h2>
-        <div class="panel-sub" id="detailCreatedBy"></div>
-      </div>
-      <button class="fav-btn" id="favBtn" onclick="toggleFavorite()">🤍</button>
+    <div class="grab-bar"></div>
+    <div class="detail-top">
+      <h2 id="dAddr"></h2>
+      <button class="star-btn" id="starBtn" onclick="toggleStar()">☆</button>
     </div>
+
+    <div id="dPhone"></div>
+
+    <div id="dContactsSec" class="detail-section">
+      <div class="detail-slabel">Contacts</div>
+      <div id="dContacts"></div>
+    </div>
+
+    <div class="detail-meta" id="dMeta"></div>
 
     <div class="detail-section">
-      <div class="detail-tags" id="detailTags"></div>
+      <div class="detail-tags" id="dTags"></div>
     </div>
 
-    <div class="detail-section" id="detailContactsSec">
-      <div class="detail-label">Contacts</div>
-      <div id="detailContacts"></div>
+    <div id="dDogsSec" class="detail-section">
+      <div class="detail-slabel">Dogs</div>
+      <div id="dDogs"></div>
     </div>
 
-    <div class="detail-section" id="detailDogsSec">
-      <div class="detail-label">Dogs</div>
-      <div id="detailDogs"></div>
+    <div id="dNotesSec" class="detail-section">
+      <div class="detail-slabel">Notes</div>
+      <div class="detail-val" id="dNotes"></div>
     </div>
 
-    <div class="detail-section" id="detailNotesSec">
-      <div class="detail-label">Notes</div>
-      <div class="detail-value" id="detailNotes"></div>
-    </div>
-
-    <div class="detail-section" id="detailInteractionsSec">
-      <div style="display:flex;align-items:center;margin-bottom:8px;">
-        <div class="detail-label" style="margin:0;flex:1;">Interactions</div>
-        <button class="add-btn" style="width:auto;padding:4px 12px;font-size:12px;" onclick="openAddInteraction()">+ Log</button>
+    <div id="dIntsSec" class="detail-section">
+      <div style="display:flex;align-items:center;">
+        <div class="detail-slabel" style="flex:1;margin:0;">Interactions</div>
+        <button class="add-row" style="width:auto;padding:4px 14px;font-size:13px;" onclick="openLogInt()">+ Log</button>
       </div>
-      <div id="detailInteractions"></div>
+      <div id="dInts" style="margin-top:8px;"></div>
     </div>
 
-    <div class="detail-section">
-      <div style="font-size:12px;color:var(--text-faint);" id="detailTimestamps"></div>
-    </div>
-
-    <div class="panel-actions">
-      <button class="btn-cancel" onclick="closeDetailPanel()">Close</button>
-      <button class="btn-save" onclick="exportVCard()" style="background:var(--bg-tertiary);color:var(--text-secondary);">📇 vCard</button>
-      <button class="btn-save" onclick="editFromDetail()">✏️ Edit</button>
+    <div class="detail-actions">
+      <button class="btn-tinted" onclick="closePanel('detailPanel')">Close</button>
+      <button class="btn-tinted" onclick="exportVC()">📇 vCard</button>
+      <button class="btn-filled" onclick="editFromDetail()">Edit</button>
     </div>
   </div>
 </div>
 
-<!-- ─── Add Interaction Panel ─── -->
-<div class="panel-overlay" id="interactionPanel" onclick="closeOnOverlay(event,'interactionPanel')">
+<!-- ── Log Interaction ── -->
+<div class="panel-overlay" id="intPanel" onclick="closeOv(event,'intPanel')">
   <div class="panel">
-    <div class="panel-handle"></div>
-    <h2>Log Interaction</h2>
-    <label>What happened?</label>
-    <textarea id="interactionNote" placeholder="Stopped by to chat, met their dog, dropped off cookies..."></textarea>
-    <div class="panel-actions">
-      <button class="btn-cancel" onclick="closePanel('interactionPanel')">Cancel</button>
-      <button class="btn-save" onclick="saveInteraction()">Save</button>
-    </div>
+    <div class="grab-bar"></div>
+    <h2 style="padding:12px 0 4px;">Log Interaction</h2>
+    <textarea class="form-input" id="intNote" placeholder="What happened?"></textarea>
+    <div class="detail-actions"><button class="btn-tinted" onclick="closePanel('intPanel')">Cancel</button><button class="btn-filled" onclick="saveInt()">Save</button></div>
   </div>
 </div>
 
-<!-- ─── Edit Panel ─── -->
-<div class="panel-overlay" id="editPanel" onclick="closeOnOverlay(event,'editPanel')">
+<!-- ── Edit ── -->
+<div class="panel-overlay" id="editPanel" onclick="closeOv(event,'editPanel')">
   <div class="panel">
-    <div class="panel-handle"></div>
-    <h2 id="editTitle">New Entry</h2>
-    <input type="hidden" id="editId">
+    <div class="grab-bar"></div>
+    <input type="hidden" id="eId">
 
-    <label>Address</label>
-    <input type="text" id="editAddress" placeholder="123 NE Main St">
+    <div class="edit-top-bar">
+      <div class="etb-left"><button class="cancel-btn" onclick="closePanel('editPanel')">Cancel</button></div>
+      <div class="etb-title" id="eTitle">New Entry</div>
+      <div class="etb-right">
+        <button class="delete-btn" id="eDelBtn" onclick="deletePin()" style="display:none;">Delete</button>
+        <button class="save-btn" onclick="savePin()">Save</button>
+      </div>
+    </div>
 
-    <div class="section-title">Tags</div>
+    <div class="form-group"><div class="form-label">Address</div><input class="form-input" id="eAddr" placeholder="123 NE Main St"></div>
+    <div class="form-group"><div class="form-label">Phone</div><input class="form-input" id="ePhone" type="tel" placeholder="(503) 555-1234"></div>
+
+    <div class="section-hdr">Tags</div>
     <div class="toggle-row">
       <div class="toggle-label">Disposition</div>
-      <div class="emoji-toggle" id="toggleFriendly">
-        <button class="emoji-opt" data-val="" onclick="setToggle('friendly','',this)">➖</button>
-        <button class="emoji-opt" data-val="friendly" onclick="setToggle('friendly','friendly',this)">😊</button>
-        <button class="emoji-opt" data-val="not-friendly" onclick="setToggle('friendly','not-friendly',this)">😠</button>
+      <div class="seg-toggle" id="tFriendly">
+        <button class="seg-opt" data-val="" onclick="setTog('friendly','',this)">➖</button>
+        <button class="seg-opt" data-val="friendly" onclick="setTog('friendly','friendly',this)">😊</button>
+        <button class="seg-opt" data-val="not-friendly" onclick="setTog('friendly','not-friendly',this)">😠</button>
       </div>
     </div>
     <div class="toggle-row">
       <div class="toggle-label">Affiliation</div>
-      <div class="emoji-toggle" id="togglePolitical">
-        <button class="emoji-opt" data-val="" onclick="setToggle('political','',this)">➖</button>
-        <button class="emoji-opt" data-val="donkey" onclick="setToggle('political','donkey',this)">🫏</button>
-        <button class="emoji-opt" data-val="elephant" onclick="setToggle('political','elephant',this)">🐘</button>
+      <div class="seg-toggle" id="tPolitical">
+        <button class="seg-opt" data-val="" onclick="setTog('political','',this)">➖</button>
+        <button class="seg-opt" data-val="donkey" onclick="setTog('political','donkey',this)">🫏</button>
+        <button class="seg-opt" data-val="elephant" onclick="setTog('political','elephant',this)">🐘</button>
       </div>
     </div>
 
-    <div class="section-title">Contacts</div>
-    <div id="editContacts"></div>
-    <button class="add-btn" onclick="addContactField()">+ Add Contact</button>
+    <div class="section-hdr">Custom Tags</div>
+    <div class="tag-chips" id="eTagChips"></div>
+    <div class="tag-input-wrap">
+      <input class="form-input" id="eTagInput" placeholder="Add a tag..." style="font-size:15px;padding:8px 12px;">
+      <button onclick="addCustomTag()">Add</button>
+    </div>
 
-    <div class="section-title">Dogs</div>
-    <div id="editDogs"></div>
-    <button class="add-btn" onclick="addDogField()">+ Add Dog</button>
+    <div class="section-hdr">Contacts</div>
+    <div id="eContacts"></div>
+    <button class="add-row" onclick="addCF()">+ Add Contact</button>
 
-    <label>Notes</label>
-    <textarea id="editNotes" placeholder="Anything else..."></textarea>
+    <div class="section-hdr">Dogs</div>
+    <div id="eDogs"></div>
+    <button class="add-row" onclick="addDF()">+ Add Dog</button>
 
-    <div class="panel-actions">
-      <button class="btn-cancel" onclick="closeEditPanel()">Cancel</button>
-      <button class="btn-delete" id="btnDeletePin" onclick="deletePin()" style="display:none;">Delete</button>
-      <button class="btn-save" onclick="savePin()">Save</button>
+    <div class="form-group"><div class="form-label">Notes</div><textarea class="form-input" id="eNotes" placeholder="Anything else..."></textarea></div>
+  </div>
+</div>
+
+<!-- ── List ── -->
+<div class="panel-overlay" id="listPanel" onclick="closeOv(event,'listPanel')">
+  <div class="panel">
+    <div class="grab-bar"></div>
+    <div style="display:flex;align-items:center;padding:12px 0;">
+      <h2 style="flex:1;font-size:22px;">Addresses</h2>
+      <span style="font-size:15px;color:var(--c-secondary);" id="listN"></span>
+    </div>
+    <div id="listC"></div>
+    <div class="detail-actions" style="padding-top:8px;">
+      <button class="btn-tinted" onclick="exportJSON()" style="font-size:13px;">📤 Export</button>
+      <button class="btn-tinted" onclick="document.getElementById('impF').click()" style="font-size:13px;">📥 Import</button>
+      <input type="file" id="impF" accept=".json" style="display:none" onchange="importJSON(event)">
     </div>
   </div>
 </div>
 
-<!-- ─── List Panel ─── -->
-<div class="panel-overlay" id="listPanel" onclick="closeOnOverlay(event,'listPanel')">
+<!-- ── Settings ── -->
+<div class="panel-overlay" id="settingsPanel" onclick="closeOv(event,'settingsPanel')">
   <div class="panel">
-    <div class="panel-handle"></div>
-    <div style="display:flex;align-items:center;margin-bottom:14px;">
-      <h2 style="flex:1;margin:0;">Addresses</h2>
-      <span style="font-size:13px;color:var(--text-tertiary);margin-right:8px;" id="listCount"></span>
-      <button class="icon-btn" onclick="closePanel('listPanel')" style="width:30px;height:30px;font-size:13px;">✕</button>
-    </div>
-    <div id="listContent"></div>
-    <div class="panel-actions" style="margin-top:14px;">
-      <button class="btn-secondary" onclick="exportData()" style="font-size:13px;">📤 Export</button>
-      <button class="btn-secondary" onclick="document.getElementById('importFile').click()" style="font-size:13px;">📥 Import</button>
-      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-    </div>
-  </div>
-</div>
-
-<!-- ─── Settings Panel ─── -->
-<div class="panel-overlay" id="settingsPanel" onclick="closeOnOverlay(event,'settingsPanel')">
-  <div class="panel">
-    <div class="panel-handle"></div>
-    <div style="display:flex;align-items:center;margin-bottom:14px;">
-      <h2 style="flex:1;margin:0;">Settings</h2>
-      <button class="icon-btn" onclick="closePanel('settingsPanel')" style="width:30px;height:30px;font-size:13px;">✕</button>
-    </div>
-    <div class="settings-row">
-      <label>Map Style</label>
-      <select id="settingsStyle" onchange="changeMapStyle()">
-        <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
-        <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite</option>
-        <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
-        <option value="mapbox://styles/mapbox/light-v11">Light</option>
-        <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
-      </select>
-    </div>
-    <div class="settings-row">
-      <label>Mapbox Access Token</label>
-      <input type="text" id="settingsToken" placeholder="pk.eyJ1Ijo...">
+    <div class="grab-bar"></div>
+    <div style="display:flex;align-items:center;padding:12px 0;">
+      <h2 style="flex:1;">Settings</h2>
+      <button class="nav-btn" onclick="closePanel('settingsPanel')">Done</button>
     </div>
     <div class="settings-row">
       <label>Signed in as</label>
-      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;" id="settingsUser"></div>
-      <button class="btn-cancel" onclick="doLogout()" style="margin-top:8px;padding:10px;font-size:14px;">Sign Out</button>
+      <div style="font-size:17px;color:var(--c-label);" id="sUser"></div>
+      <button class="btn-tinted" onclick="doLogout()" style="margin-top:8px;height:36px;border-radius:8px;width:100%;font-size:15px;font-weight:600;border:none;cursor:pointer;">Sign Out</button>
     </div>
-    <div class="panel-actions">
-      <button class="btn-cancel" onclick="closePanel('settingsPanel')">Cancel</button>
-      <button class="btn-save" onclick="saveSettings()">Save</button>
-    </div>
-    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border-light);">
-      <p style="font-size:12px;color:var(--text-faint);">hornhüd v3.0 — Synced via Firebase.<br><span id="pinCount">0</span> addresses.</p>
-    </div>
+    <div style="padding-top:16px;"><p style="font-size:13px;color:var(--c-tertiary);">hornhüd v3.1 — Synced via Firebase.<br><span id="pinCt">0</span> addresses.</p></div>
   </div>
 </div>
 
-<!-- ─── Help Panel ─── -->
-<div class="panel-overlay" id="helpPanel" onclick="closeOnOverlay(event,'helpPanel')">
+<!-- ── Help ── -->
+<div class="panel-overlay" id="helpPanel" onclick="closeOv(event,'helpPanel')">
   <div class="panel">
-    <div class="panel-handle"></div>
-    <div style="display:flex;align-items:center;margin-bottom:14px;">
-      <h2 style="flex:1;margin:0;">How to Use hornhüd</h2>
-      <button class="icon-btn" onclick="closePanel('helpPanel')" style="width:30px;height:30px;font-size:13px;">✕</button>
+    <div class="grab-bar"></div>
+    <div style="display:flex;align-items:center;padding:12px 0;">
+      <h2 style="flex:1;">How to Use hornhüd</h2>
+      <button class="nav-btn" onclick="closePanel('helpPanel')">Done</button>
     </div>
     <div class="help-content">
       <h3>Tagging an Address</h3>
-      <p>Zoom in and tap any building on the map. If it's already tagged, you'll see its details. If it's new, an edit form opens with the address auto-filled.</p>
-
+      <p>Zoom in and tap any building outline on the map. If it's already tagged, you'll see its details. If it's new, an edit form opens with the address auto-filled from GPS.</p>
       <h3>Editing a Record</h3>
-      <p>From the detail view, tap <strong>Edit</strong> at the bottom. You can change the disposition (😊/😠), affiliation (🫏/🐘), add contacts, dogs, and notes.</p>
-
-      <h3>The + Button</h3>
-      <p>If you don't see a building outline (e.g. you're standing in front of a house), tap <strong>+</strong> at the bottom right. It uses your GPS to create an entry for wherever you are.</p>
-
+      <p>From the detail view, tap <strong>Edit</strong>. Change disposition, affiliation, contacts, dogs, notes, or add your own custom tags.</p>
       <h3>Searching &amp; Filtering</h3>
-      <p>Use the search bar to find addresses or contact names. Tap the 🏷️ button to filter by disposition, affiliation, or favorites.</p>
-
-      <h3>Favorites</h3>
-      <p>In the detail view, tap the heart to favorite an address. Your favorites are visible to all users but personal to you — the other user has their own favorites.</p>
-
+      <p>Use the search bar to find addresses or contact names. Tap 🏷️ to filter by tags or stars.</p>
+      <h3>Stars</h3>
+      <p>Tap the star on any address to mark it. Stars are personal — each user has their own — but visible to everyone.</p>
       <h3>Interactions</h3>
-      <p>Keep a log of when you connected with someone. In the detail view, tap <strong>+ Log</strong> to add a timestamped note. Each entry shows who logged it.</p>
-
-      <h3>Importing &amp; Exporting Data</h3>
-      <div class="help-step"><div class="step-num">1</div><div class="step-text">Open the <strong>List</strong> view from the bottom bar.</div></div>
-      <div class="help-step"><div class="step-num">2</div><div class="step-text"><strong>Export:</strong> Tap 📤 Export to download all your data as a JSON file.</div></div>
-      <div class="help-step"><div class="step-num">3</div><div class="step-text"><strong>Import:</strong> Tap 📥 Import and select a previously exported JSON file. Existing records are updated; new ones are added.</div></div>
-
+      <p>Tap <strong>+ Log</strong> in the detail view to record when you connected with someone. Shows who logged it and when.</p>
+      <h3>Importing &amp; Exporting</h3>
+      <div class="help-step"><div class="step-n">1</div><div class="step-t">Open <strong>List</strong> from the bottom bar.</div></div>
+      <div class="help-step"><div class="step-n">2</div><div class="step-t"><strong>Export:</strong> Tap 📤 to download a JSON backup.</div></div>
+      <div class="help-step"><div class="step-n">3</div><div class="step-t"><strong>Import:</strong> Tap 📥 and select a JSON file.</div></div>
       <h3>Saving to Contacts</h3>
-      <p>In the detail view, tap <strong>📇 vCard</strong> to generate a contact card. On iPhone, this opens a prompt to add them to your Contacts app.</p>
-
-      <h3>Map Styles</h3>
-      <p>Go to ⚙️ Settings to switch between Streets, Satellite, Outdoors, Light, and Dark map views.</p>
+      <p>Tap <strong>📇 vCard</strong> in the detail view to create a contact card your iPhone can add to Contacts.</p>
     </div>
   </div>
 </div>
 
 <script>
-// ════════════════════════════════════════════
-// Firebase
-// ════════════════════════════════════════════
-const firebaseConfig = {
+// ═══════ Firebase ═══════
+firebase.initializeApp({
   apiKey: "AIzaSyBS93QakyeYlK16RuxLNarue5IKsnVFEfk",
   authDomain: "hornhud-7cad2.firebaseapp.com",
   projectId: "hornhud-7cad2",
   storageBucket: "hornhud-7cad2.firebasestorage.app",
   messagingSenderId: "1075696398962",
   appId: "1:1075696398962:web:758c291359e183fe4fc8eb"
-};
-firebase.initializeApp(firebaseConfig);
+});
 const auth = firebase.auth();
 const fsdb = firebase.firestore();
 const pinsRef = fsdb.collection('pins');
+const MAPBOX_TOKEN = 'pk.eyJ1Ijoibm9haCIsImEiOiJjbW1waW52a20wb3ByMzNwdjg1enozdzJqIn0.cKXSb7IWUkLl9q-_yrED6g';
 
-let currentUser = null;
-let unsubPins = null;
+let currentUser = null, unsubPins = null;
+let map, markers = {}, pinData = [], activeFilter = 'all';
+let userLng, userLat, showLabels = false;
+let eFriendly = '', ePolitical = '', eContacts = [], eDogs = [], eTags = [];
+let curDetailId = null;
 
-// ════════════════════════════════════════════
-// Auth
-// ════════════════════════════════════════════
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentUser = user;
-    document.getElementById('authScreen').classList.add('hidden');
-    const token = localStorage.getItem('mapbox_token');
-    if (token) {
-      document.getElementById('setupScreen').classList.add('hidden');
-      showApp();
-      initMap(token);
-    } else {
-      document.getElementById('setupScreen').classList.remove('hidden');
-    }
-  } else {
-    currentUser = null;
-    document.getElementById('authScreen').classList.remove('hidden');
-  }
+// ═══════ Auth ═══════
+auth.onAuthStateChanged(u => {
+  if (u) { currentUser = u; document.getElementById('authScreen').classList.add('hidden'); showApp(); initMap(); }
+  else { currentUser = null; document.getElementById('authScreen').classList.remove('hidden'); }
 });
-
 function doLogin() {
-  const email = document.getElementById('authEmail').value.trim();
-  const pass = document.getElementById('authPass').value;
-  document.getElementById('authError').textContent = '';
-  auth.signInWithEmailAndPassword(email, pass).catch(err => {
-    document.getElementById('authError').textContent = err.message.replace('Firebase: ', '');
-  });
+  const e = document.getElementById('authEmail').value.trim(), p = document.getElementById('authPass').value;
+  document.getElementById('authErr').textContent = '';
+  auth.signInWithEmailAndPassword(e, p).catch(err => document.getElementById('authErr').textContent = err.message.replace('Firebase: ',''));
 }
+function doLogout() { if (unsubPins) unsubPins(); auth.signOut(); location.reload(); }
+function showApp() { document.getElementById('topBar').classList.remove('hidden'); document.getElementById('bottomBar').classList.remove('hidden'); }
+function uname() { return currentUser?.email?.split('@')[0] || 'Unknown'; }
 
-function doLogout() {
-  if (unsubPins) unsubPins();
-  auth.signOut();
-  location.reload();
-}
-
-function saveMapboxToken() {
-  const t = document.getElementById('setupToken').value.trim();
-  if (!t) { showToast('Please enter a token'); return; }
-  localStorage.setItem('mapbox_token', t);
-  document.getElementById('setupScreen').classList.add('hidden');
-  showApp();
-  initMap(t);
-}
-
-function showApp() {
-  document.getElementById('topBar').classList.remove('hidden');
-  document.getElementById('bottomBar').classList.remove('hidden');
-}
-
-function userName() {
-  return currentUser?.email?.split('@')[0] || 'Unknown';
-}
-
-// ════════════════════════════════════════════
-// USPS Formatting
-// ════════════════════════════════════════════
-function fmt(addr) {
-  if (!addr) return '';
-  let s = addr.split(',')[0].trim();
-  const dirs = { Northeast:'NE',Northwest:'NW',Southeast:'SE',Southwest:'SW',North:'N',South:'S',East:'E',West:'W' };
-  const suf = { Street:'St',Avenue:'Ave',Boulevard:'Blvd',Drive:'Dr',Lane:'Ln',Court:'Ct',Place:'Pl',Road:'Rd',Circle:'Cir',Way:'Way',Terrace:'Ter',Trail:'Trl',Parkway:'Pkwy',Highway:'Hwy' };
-  for (const [f,a] of Object.entries(dirs)) s = s.replace(new RegExp(`\\b${f}\\b`,'g'), a);
-  for (const [f,a] of Object.entries(suf)) s = s.replace(new RegExp(`\\b${f}\\b`,'gi'), a);
+// ═══════ USPS Format ═══════
+function fmt(a) {
+  if (!a) return '';
+  let s = a.split(',')[0].trim();
+  const d = {Northeast:'NE',Northwest:'NW',Southeast:'SE',Southwest:'SW',North:'N',South:'S',East:'E',West:'W'};
+  const x = {Street:'St',Avenue:'Ave',Boulevard:'Blvd',Drive:'Dr',Lane:'Ln',Court:'Ct',Place:'Pl',Road:'Rd',Circle:'Cir',Way:'Way',Terrace:'Ter',Trail:'Trl',Parkway:'Pkwy'};
+  for (const [f,r] of Object.entries(d)) s=s.replace(new RegExp(`\\b${f}\\b`,'g'),r);
+  for (const [f,r] of Object.entries(x)) s=s.replace(new RegExp(`\\b${f}\\b`,'gi'),r);
   return s;
 }
 
-// ════════════════════════════════════════════
-// State
-// ════════════════════════════════════════════
-const FCOL = { friendly:'#22c55e', 'not-friendly':'#ef4444', '':'#94a3b8' };
-let map, markers = {}, pinData = [], activeFilter = 'all';
-let userLng, userLat, showCards = false;
-let editFriendly = '', editPolitical = '';
-let currentDetailId = null;
-let editContactsList = [], editDogsList = [];
-
-// ════════════════════════════════════════════
-// Map
-// ════════════════════════════════════════════
-async function initMap(token) {
-  mapboxgl.accessToken = token;
-  map = new mapboxgl.Map({
-    container: 'map',
-    style: localStorage.getItem('map_style') || 'mapbox://styles/mapbox/streets-v12',
-    center: [-122.56, 45.55],
-    zoom: 19,
-    attributionControl: false
-  });
-  map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
-  map.addControl(new mapboxgl.NavigationControl({ visualizePitch: false }), 'top-right');
-
-  const geo = new mapboxgl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true });
-  map.addControl(geo, 'top-right');
-
-  map.on('load', () => {
-    geo.trigger();
-    listenToPins(); // Firestore real-time
-  });
-
-  map.on('click', async (e) => {
-    const features = map.queryRenderedFeatures(e.point, { layers: ['building'] });
-    if (features.length > 0) {
-      const { lng, lat } = e.lngLat;
-      const nearby = findNearby(lng, lat);
-      if (nearby) { openDetailPanel(nearby.id); }
-      else {
-        const addr = await reverseGeocode(lng, lat);
-        openEditPanel(null, { lng, lat, address: addr, buildingGeometry: features[0].geometry });
-      }
+// ═══════ Map ═══════
+function initMap() {
+  mapboxgl.accessToken = MAPBOX_TOKEN;
+  map = new mapboxgl.Map({ container:'map', style:'mapbox://styles/mapbox/streets-v12', center:[-122.56,45.55], zoom:18, attributionControl:false });
+  map.addControl(new mapboxgl.AttributionControl({compact:true}),'bottom-right');
+  map.addControl(new mapboxgl.NavigationControl(),'top-right');
+  const geo = new mapboxgl.GeolocateControl({positionOptions:{enableHighAccuracy:true},trackUserLocation:true,showUserHeading:true});
+  map.addControl(geo,'top-right');
+  map.on('load',()=>{ geo.trigger(); listenPins(); });
+  map.on('click', async e => {
+    const f = map.queryRenderedFeatures(e.point,{layers:['building']});
+    if (f.length) {
+      const {lng,lat} = e.lngLat;
+      const nb = pinData.find(p=>Math.abs(p.lng-lng)<0.0002&&Math.abs(p.lat-lat)<0.0002);
+      if (nb) openDetail(nb.id);
+      else { const a=await reverseGeo(lng,lat); openEdit(null,{lng,lat,address:a,bldg:f[0].geometry}); }
     }
   });
-
-  map.on('zoom', () => {
-    const sc = map.getZoom() >= 17;
-    if (sc !== showCards) { showCards = sc; document.getElementById('map').classList.toggle('show-cards', showCards); }
-  });
-
-  geo.on('geolocate', (e) => { userLng = e.coords.longitude; userLat = e.coords.latitude; });
+  map.on('zoom',()=>{ const s=map.getZoom()>=17; if(s!==showLabels){showLabels=s;document.getElementById('map').classList.toggle('show-labels',s);} });
+  geo.on('geolocate',e=>{userLng=e.coords.longitude;userLat=e.coords.latitude;});
 }
 
-function findNearby(lng, lat) {
-  return pinData.find(p => Math.abs(p.lng - lng) < 0.0002 && Math.abs(p.lat - lat) < 0.0002);
-}
-
-// ════════════════════════════════════════════
-// Firestore Real-Time
-// ════════════════════════════════════════════
-function listenToPins() {
+// ═══════ Firestore ═══════
+function listenPins() {
   unsubPins = pinsRef.onSnapshot(snap => {
     pinData = snap.docs.map(d => {
-      const data = { id: d.id, ...d.data() };
-      // Parse buildingGeometry back from JSON string
-      if (data.buildingGeometryJSON && !data.buildingGeometry) {
-        try { data.buildingGeometry = JSON.parse(data.buildingGeometryJSON); } catch(e) {}
-      }
-      return data;
+      const o = {id:d.id,...d.data()};
+      if (o.buildingGeometryJSON && !o.buildingGeometry) try{o.buildingGeometry=JSON.parse(o.buildingGeometryJSON);}catch(e){}
+      if (!o.contacts) o.contacts = o.owner ? [{name:o.owner,email:o.email||''}] : [];
+      if (!o.dogs) o.dogs = [];
+      if (!o.interactions) o.interactions = [];
+      if (!o.favorites) o.favorites = {};
+      if (!o.customTags) o.customTags = [];
+      return o;
     });
-    renderAllMarkers();
-    updateBuildingColors();
-    updatePinCount();
-  }, err => console.error('Firestore error:', err));
-}
-
-async function savePinToDB(pin) {
-  const { id, ...data } = pin;
-  // Stringify buildingGeometry — Firestore can't store nested arrays
-  if (data.buildingGeometry && typeof data.buildingGeometry === 'object') {
-    data.buildingGeometryJSON = JSON.stringify(data.buildingGeometry);
-    delete data.buildingGeometry;
-  }
-  await pinsRef.doc(id).set(data, { merge: true });
-}
-
-async function deletePinFromDB(id) {
-  await pinsRef.doc(id).delete();
-}
-
-// ════════════════════════════════════════════
-// Building Color Layer
-// ════════════════════════════════════════════
-function addBuildingColorLayer() {
-  if (map.getSource('pin-bldgs')) return;
-  map.addSource('pin-bldgs', { type: 'geojson', data: buildColorGJ() });
-  map.addLayer({
-    id: 'pin-bldg-fills', type: 'fill-extrusion', source: 'pin-bldgs',
-    paint: { 'fill-extrusion-color': ['get','color'], 'fill-extrusion-opacity': 0.5, 'fill-extrusion-height': 8, 'fill-extrusion-base': 0 }
+    renderMarkers(); updateBldgColors(); updCt();
   });
 }
-
-function buildColorGJ() {
-  const features = pinData.filter(p => p.political && p.buildingGeometry).map(p => ({
-    type: 'Feature', geometry: p.buildingGeometry,
-    properties: { color: p.political === 'donkey' ? '#2563eb' : '#dc2626', id: p.id }
-  }));
-  return { type: 'FeatureCollection', features };
+async function saveToDB(pin) {
+  const {id,...d} = pin;
+  if (d.buildingGeometry && typeof d.buildingGeometry==='object') { d.buildingGeometryJSON=JSON.stringify(d.buildingGeometry); delete d.buildingGeometry; }
+  await pinsRef.doc(id).set(d,{merge:true});
 }
 
-function updateBuildingColors() {
-  if (!map) return;
-  try {
-    if (!map.getSource('pin-bldgs')) addBuildingColorLayer();
-    else map.getSource('pin-bldgs').setData(buildColorGJ());
-  } catch(e) {}
+// ═══════ Building Colors ═══════
+function addBldgLayer() {
+  if (map.getSource('pbldg')) return;
+  map.addSource('pbldg',{type:'geojson',data:bldgGJ()});
+  map.addLayer({id:'pbldg-fill',type:'fill-extrusion',source:'pbldg',paint:{'fill-extrusion-color':['get','color'],'fill-extrusion-opacity':0.45,'fill-extrusion-height':8}});
+}
+function bldgGJ() {
+  return {type:'FeatureCollection',features:pinData.filter(p=>p.political&&p.buildingGeometry).map(p=>({
+    type:'Feature',geometry:p.buildingGeometry,properties:{color:p.political==='donkey'?'#007aff':'#ff3b30'}
+  }))};
+}
+function updateBldgColors() { if(!map)return; try{if(!map.getSource('pbldg'))addBldgLayer();else map.getSource('pbldg').setData(bldgGJ());}catch(e){} }
+
+// ═══════ Geocode ═══════
+async function reverseGeo(lng,lat) {
+  try { const r=await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=address&access_token=${MAPBOX_TOKEN}`); const d=await r.json(); return d.features?.[0]?.place_name||''; } catch(e){return '';}
 }
 
-// ════════════════════════════════════════════
-// Reverse Geocoding
-// ════════════════════════════════════════════
-async function reverseGeocode(lng, lat) {
-  try {
-    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=address&access_token=${mapboxgl.accessToken}`);
-    const d = await r.json();
-    return d.features?.[0]?.place_name || '';
-  } catch(e) { return ''; }
-}
+// ═══════ Markers ═══════
+function mkEmoji(p){return p.friendly==='friendly'?'😊':p.friendly==='not-friendly'?'😠':'🏠';}
+function mkColor(p){return p.friendly==='friendly'?'#34c759':p.friendly==='not-friendly'?'#ff3b30':'#c7c7cc';}
 
-// ════════════════════════════════════════════
-// Markers
-// ════════════════════════════════════════════
-function mkEmoji(p) { return p.friendly === 'friendly' ? '😊' : p.friendly === 'not-friendly' ? '😠' : '🏠'; }
+function renderMarkers() {
+  Object.values(markers).forEach(m=>m.remove()); markers={};
+  pinData.forEach(p=>{
+    const w=document.createElement('div'); w.className='mk-wrap';
+    const pin=document.createElement('div'); pin.className='mk-pin'; pin.style.background=mkColor(p);
+    const em=document.createElement('span'); em.className='mk-emoji'; em.textContent=mkEmoji(p);
+    pin.appendChild(em); w.appendChild(pin);
 
-function createMarkerEl(pin) {
-  const w = document.createElement('div');
-  w.className = 'marker-wrap';
+    // Star
+    const star=document.createElement('div'); star.className='mk-star'+(p.favorites?.[currentUser?.uid]?' vis':''); star.textContent='⭐';
+    w.appendChild(star);
 
-  const el = document.createElement('div');
-  el.className = 'marker-pin';
-  el.style.background = FCOL[pin.friendly || ''] || FCOL[''];
-  const em = document.createElement('span');
-  em.className = 'marker-emoji';
-  em.textContent = mkEmoji(pin);
-  el.appendChild(em);
-  w.appendChild(el);
+    // Label: emoji + first name
+    const lbl=document.createElement('div'); lbl.className='mk-label';
+    const firstName=(p.contacts||[])[0]?.name?.split(' ')[0]||'';
+    lbl.textContent=firstName?(mkEmoji(p)+' '+firstName):(fmt(p.address)||'');
+    w.appendChild(lbl);
 
-  // Favorite heart
-  const fav = document.createElement('div');
-  fav.className = 'marker-fav' + (pin.favorites?.[currentUser?.uid] ? ' active' : '');
-  fav.textContent = '❤️';
-  w.appendChild(fav);
-
-  // Building info card
-  const card = document.createElement('div');
-  card.className = 'bldg-card';
-  const firstName = (pin.contacts || [])[0]?.name || '';
-  let icons = '';
-  if (pin.friendly === 'friendly') icons += '😊';
-  if (pin.friendly === 'not-friendly') icons += '😠';
-  if (pin.political === 'donkey') icons += '🫏';
-  if (pin.political === 'elephant') icons += '🐘';
-  if ((pin.dogs || []).length) icons += '🐕';
-  if (pin.favorites?.[currentUser?.uid]) icons += '❤️';
-  card.innerHTML = `<div class="bldg-card-name">${esc(firstName || fmt(pin.address))}</div>` +
-    (icons ? `<div class="bldg-card-icons">${icons}</div>` : '');
-  w.appendChild(card);
-
-  return w;
-}
-
-function renderAllMarkers() {
-  Object.values(markers).forEach(m => m.remove());
-  markers = {};
-  pinData.forEach(p => addMarker(p));
+    w.addEventListener('click',e=>{e.stopPropagation();openDetail(p.id);});
+    markers[p.id]=new mapboxgl.Marker({element:w,anchor:'bottom-left'}).setLngLat([p.lng,p.lat]).addTo(map);
+  });
   applyFilters();
-}
-
-function addMarker(pin) {
-  const el = createMarkerEl(pin);
-  el.addEventListener('click', e => { e.stopPropagation(); openDetailPanel(pin.id); });
-  markers[pin.id] = new mapboxgl.Marker({ element: el, anchor: 'bottom-left' })
-    .setLngLat([pin.lng, pin.lat]).addTo(map);
 }
 
 function applyFilters() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  pinData.forEach(p => {
-    const m = markers[p.id]; if (!m) return;
-    let fOk = true;
-    if (activeFilter === 'friendly') fOk = p.friendly === 'friendly';
-    else if (activeFilter === 'not-friendly') fOk = p.friendly === 'not-friendly';
-    else if (activeFilter === 'donkey') fOk = p.political === 'donkey';
-    else if (activeFilter === 'elephant') fOk = p.political === 'elephant';
-    else if (activeFilter === 'favorited') fOk = !!p.favorites?.[currentUser?.uid];
-    const names = (p.contacts||[]).map(c => c.name.toLowerCase()).join(' ');
-    const sOk = !q || (p.address||'').toLowerCase().includes(q) || names.includes(q) || (p.notes||'').toLowerCase().includes(q);
-    m.getElement().style.display = (fOk && sOk) ? '' : 'none';
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  pinData.forEach(p=>{
+    const m=markers[p.id]; if(!m)return;
+    let ok=true;
+    if(activeFilter==='friendly')ok=p.friendly==='friendly';
+    else if(activeFilter==='not-friendly')ok=p.friendly==='not-friendly';
+    else if(activeFilter==='donkey')ok=p.political==='donkey';
+    else if(activeFilter==='elephant')ok=p.political==='elephant';
+    else if(activeFilter==='starred')ok=!!p.favorites?.[currentUser?.uid];
+    const names=(p.contacts||[]).map(c=>c.name.toLowerCase()).join(' ');
+    const sOk=!q||(p.address||'').toLowerCase().includes(q)||names.includes(q)||(p.notes||'').toLowerCase().includes(q);
+    m.getElement().style.display=(ok&&sOk)?'':'none';
   });
 }
 
-// ════════════════════════════════════════════
-// Detail Panel
-// ════════════════════════════════════════════
-function openDetailPanel(id) {
-  const pin = pinData.find(p => p.id === id);
-  if (!pin) return;
-  currentDetailId = id;
+// ═══════ Detail ═══════
+function openDetail(id) {
+  const p=pinData.find(x=>x.id===id); if(!p)return; curDetailId=id;
+  document.getElementById('dAddr').textContent=fmt(p.address)||'No address';
 
-  document.getElementById('detailAddr').textContent = fmt(pin.address) || 'No address';
-  document.getElementById('detailCreatedBy').textContent = pin.createdByName ? `Added by ${pin.createdByName}` : '';
+  // Star
+  const isStar=!!p.favorites?.[currentUser?.uid];
+  document.getElementById('starBtn').textContent=isStar?'★':'☆';
+  document.getElementById('starBtn').classList.toggle('active',isStar);
 
-  // Favorite button
-  const isFav = !!pin.favorites?.[currentUser?.uid];
-  document.getElementById('favBtn').textContent = isFav ? '❤️' : '🤍';
-  document.getElementById('favBtn').classList.toggle('active', isFav);
-
-  // Tags
-  let tags = '';
-  if (pin.friendly === 'friendly') tags += '<span class="tag-pill friendly"><span class="tag-emoji">😊</span> Friendly</span>';
-  else if (pin.friendly === 'not-friendly') tags += '<span class="tag-pill not-friendly"><span class="tag-emoji">😠</span> Not Friendly</span>';
-  if (pin.political === 'donkey') tags += '<span class="tag-pill donkey"><span class="tag-emoji">🫏</span> Donkey</span>';
-  else if (pin.political === 'elephant') tags += '<span class="tag-pill elephant"><span class="tag-emoji">🐘</span> Elephant</span>';
-  document.getElementById('detailTags').innerHTML = tags || '<span class="detail-value empty">No tags</span>';
+  // Phone (address-level)
+  const phoneEl=document.getElementById('dPhone');
+  if(p.phone){phoneEl.innerHTML=`<div class="phone-row"><div class="phone-icon">📞</div><a class="phone-link" href="tel:${esc(p.phone)}">${esc(p.phone)}</a></div>`;phoneEl.style.display='';}
+  else phoneEl.style.display='none';
 
   // Contacts
-  const contacts = pin.contacts || [];
-  document.getElementById('detailContacts').innerHTML = contacts.length === 0
-    ? '<span class="detail-value empty">No contacts</span>'
-    : contacts.map(c => `<div class="contact-card">
-        <div class="contact-name">${esc(c.name) || 'Unnamed'}</div>
-        ${c.phone ? `<a class="contact-link" href="tel:${esc(c.phone)}">📱 ${esc(c.phone)}</a><br>` : ''}
-        ${c.email ? `<a class="contact-link" href="mailto:${esc(c.email)}">✉️ ${esc(c.email)}</a>` : ''}
-      </div>`).join('');
+  const cs=p.contacts||[];
+  document.getElementById('dContacts').innerHTML=cs.length?cs.map(c=>`<div class="detail-contact"><div class="dc-avatar">👤</div><div class="dc-info"><div class="dc-name">${esc(c.name)||'Unnamed'}</div>${c.email?`<a class="dc-email" href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:''}</div></div>`).join(''):'<div class="detail-val empty">No contacts</div>';
+
+  // Meta
+  document.getElementById('dMeta').textContent=p.createdByName?`Added by ${p.createdByName}`:'';
+
+  // Tags
+  let tags='';
+  if(p.friendly==='friendly')tags+='<span class="dtag friendly">😊 Friendly</span>';
+  else if(p.friendly==='not-friendly')tags+='<span class="dtag not-friendly">😠 Not Friendly</span>';
+  if(p.political==='donkey')tags+='<span class="dtag donkey">🫏 Donkey</span>';
+  else if(p.political==='elephant')tags+='<span class="dtag elephant">🐘 Elephant</span>';
+  (p.customTags||[]).forEach(t=>tags+=`<span class="dtag custom">${esc(t)}</span>`);
+  document.getElementById('dTags').innerHTML=tags||'<div class="detail-val empty">No tags</div>';
 
   // Dogs
-  const dogs = pin.dogs || [];
-  document.getElementById('detailDogs').innerHTML = dogs.length === 0
-    ? '<span class="detail-value empty">No dogs</span>'
-    : dogs.map(d => `<div class="dog-card"><div class="dog-emoji">🐕</div><div><div class="dog-name">${esc(d.name)||'Unnamed'}</div>${d.breed?'<div class="dog-breed">'+esc(d.breed)+'</div>':''}</div></div>`).join('');
+  document.getElementById('dDogs').innerHTML=(p.dogs||[]).length?(p.dogs||[]).map(d=>`<div class="dog-row"><span style="font-size:20px;">🐕</span><div><div style="font-size:17px;font-weight:600;">${esc(d.name)||'Unnamed'}</div>${d.breed?'<div style="font-size:15px;color:var(--c-secondary);">'+esc(d.breed)+'</div>':''}</div></div>`).join(''):'<div class="detail-val empty">No dogs</div>';
 
   // Notes
-  const nEl = document.getElementById('detailNotes');
-  if (pin.notes?.trim()) { nEl.textContent = pin.notes; nEl.classList.remove('empty'); }
-  else { nEl.textContent = 'No notes'; nEl.classList.add('empty'); }
+  const nEl=document.getElementById('dNotes');
+  if(p.notes?.trim()){nEl.textContent=p.notes;nEl.classList.remove('empty');}else{nEl.textContent='No notes';nEl.classList.add('empty');}
 
   // Interactions
-  const ints = (pin.interactions || []).sort((a,b) => (b.date||'').localeCompare(a.date||''));
-  document.getElementById('detailInteractions').innerHTML = ints.length === 0
-    ? '<span class="detail-value empty">No interactions logged</span>'
-    : ints.map(i => `<div class="interaction-item">
-        <div class="interaction-note">${esc(i.note)}</div>
-        <div class="interaction-meta">${i.userName || 'Unknown'} · ${i.date ? new Date(i.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : ''}</div>
-      </div>`).join('');
-
-  // Timestamps
-  document.getElementById('detailTimestamps').textContent = pin.updated
-    ? 'Updated ' + new Date(pin.updated).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})
-    : '';
+  const ints=(p.interactions||[]).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('dInts').innerHTML=ints.length?ints.map(i=>`<div class="interaction-row"><div class="int-note">${esc(i.note)}</div><div class="int-meta">${i.userName||'Unknown'} · ${i.date?new Date(i.date).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}</div></div>`).join(''):'<div class="detail-val empty">None yet</div>';
 
   document.getElementById('detailPanel').classList.add('open');
 }
+function closePanel(id){document.getElementById(id).classList.remove('open');}
+function editFromDetail(){const id=curDetailId;closePanel('detailPanel');setTimeout(()=>openEdit(id),120);}
 
-function closeDetailPanel() { document.getElementById('detailPanel').classList.remove('open'); currentDetailId = null; }
-function editFromDetail() { const id = currentDetailId; closeDetailPanel(); setTimeout(() => openEditPanel(id), 120); }
-
-// ════════════════════════════════════════════
-// Favorites
-// ════════════════════════════════════════════
-async function toggleFavorite() {
-  if (!currentDetailId || !currentUser) return;
-  const pin = pinData.find(p => p.id === currentDetailId);
-  if (!pin) return;
-  const favs = pin.favorites || {};
-  const isFav = !!favs[currentUser.uid];
-  favs[currentUser.uid] = !isFav;
-  await pinsRef.doc(currentDetailId).update({ favorites: favs });
-  // UI updates via real-time listener
+// ═══════ Stars ═══════
+async function toggleStar() {
+  if(!curDetailId||!currentUser)return;
+  const p=pinData.find(x=>x.id===curDetailId); if(!p)return;
+  const favs=p.favorites||{};
+  favs[currentUser.uid]=!favs[currentUser.uid];
+  await pinsRef.doc(curDetailId).update({favorites:favs});
+  showToast(favs[currentUser.uid]?'Starred':'Unstarred');
 }
 
-// ════════════════════════════════════════════
-// Interactions
-// ════════════════════════════════════════════
-function openAddInteraction() { document.getElementById('interactionNote').value = ''; document.getElementById('interactionPanel').classList.add('open'); }
-
-async function saveInteraction() {
-  if (!currentDetailId) return;
-  const note = document.getElementById('interactionNote').value.trim();
-  if (!note) { showToast('Enter a note'); return; }
-  const pin = pinData.find(p => p.id === currentDetailId);
-  if (!pin) return;
-  const ints = pin.interactions || [];
-  ints.push({ note, date: new Date().toISOString(), userId: currentUser?.uid, userName: userName() });
-  await pinsRef.doc(currentDetailId).update({ interactions: ints });
-  closePanel('interactionPanel');
-  showToast('Interaction logged');
-  // Detail panel will refresh via real-time listener; reopen it
-  setTimeout(() => openDetailPanel(currentDetailId), 300);
+// ═══════ Interactions ═══════
+function openLogInt(){document.getElementById('intNote').value='';document.getElementById('intPanel').classList.add('open');}
+async function saveInt(){
+  if(!curDetailId)return;const note=document.getElementById('intNote').value.trim();if(!note){showToast('Enter a note');return;}
+  const p=pinData.find(x=>x.id===curDetailId);if(!p)return;
+  const ints=p.interactions||[];ints.push({note,date:new Date().toISOString(),userId:currentUser?.uid,userName:uname()});
+  await pinsRef.doc(curDetailId).update({interactions:ints});closePanel('intPanel');showToast('Logged');
+  setTimeout(()=>openDetail(curDetailId),300);
 }
 
-// ════════════════════════════════════════════
-// Edit Panel
-// ════════════════════════════════════════════
-function setToggle(group, val, btn) {
-  const c = document.getElementById(group === 'friendly' ? 'toggleFriendly' : 'togglePolitical');
-  c.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  if (group === 'friendly') editFriendly = val; else editPolitical = val;
+// ═══════ Edit ═══════
+function setTog(g,v,btn){
+  const c=document.getElementById(g==='friendly'?'tFriendly':'tPolitical');
+  c.querySelectorAll('.seg-opt').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel');
+  if(g==='friendly')eFriendly=v;else ePolitical=v;
 }
-function syncToggle(cId, val) {
-  document.getElementById(cId).querySelectorAll('.emoji-opt').forEach(b => b.classList.toggle('selected', b.dataset.val === val));
-}
+function syncTog(cId,v){document.getElementById(cId).querySelectorAll('.seg-opt').forEach(b=>b.classList.toggle('sel',b.dataset.val===v));}
 
-function renderEditContacts() {
-  document.getElementById('editContacts').innerHTML = editContactsList.map((c, i) => `
-    <div class="edit-card"><button class="remove-card" onclick="editContactsList.splice(${i},1);renderEditContacts()">✕</button>
-    <input placeholder="Name" value="${esc(c.name)}" onchange="editContactsList[${i}].name=this.value">
-    <input placeholder="Phone" value="${esc(c.phone)}" onchange="editContactsList[${i}].phone=this.value">
-    <input placeholder="Email" value="${esc(c.email)}" onchange="editContactsList[${i}].email=this.value">
-    </div>`).join('');
-}
-function addContactField() { editContactsList.push({name:'',phone:'',email:''}); renderEditContacts(); }
+function renderEC(){document.getElementById('eContacts').innerHTML=eContacts.map((c,i)=>`<div class="edit-card"><button class="rm-btn" onclick="eContacts.splice(${i},1);renderEC()">✕</button><input class="form-input" placeholder="Name" value="${esc(c.name)}" onchange="eContacts[${i}].name=this.value"><input class="form-input" placeholder="Email" value="${esc(c.email)}" onchange="eContacts[${i}].email=this.value"></div>`).join('');}
+function addCF(){eContacts.push({name:'',email:''});renderEC();}
 
-function renderEditDogs() {
-  document.getElementById('editDogs').innerHTML = editDogsList.map((d, i) => `
-    <div class="edit-card"><button class="remove-card" onclick="editDogsList.splice(${i},1);renderEditDogs()">✕</button>
-    <input placeholder="Dog name" value="${esc(d.name)}" onchange="editDogsList[${i}].name=this.value">
-    <input placeholder="Breed" value="${esc(d.breed)}" onchange="editDogsList[${i}].breed=this.value">
-    </div>`).join('');
-}
-function addDogField() { editDogsList.push({name:'',breed:''}); renderEditDogs(); }
+function renderED(){document.getElementById('eDogs').innerHTML=eDogs.map((d,i)=>`<div class="edit-card"><button class="rm-btn" onclick="eDogs.splice(${i},1);renderED()">✕</button><input class="form-input" placeholder="Dog name" value="${esc(d.name)}" onchange="eDogs[${i}].name=this.value"><input class="form-input" placeholder="Breed" value="${esc(d.breed)}" onchange="eDogs[${i}].breed=this.value"></div>`).join('');}
+function addDF(){eDogs.push({name:'',breed:''});renderED();}
 
-function openEditPanel(id, defaults) {
-  const isNew = !id;
-  const panel = document.getElementById('editPanel');
-  if (isNew) {
-    document.getElementById('editTitle').textContent = 'New Entry';
-    document.getElementById('editId').value = '';
-    document.getElementById('editAddress').value = fmt(defaults?.address || '');
-    document.getElementById('editNotes').value = '';
-    document.getElementById('btnDeletePin').style.display = 'none';
-    editFriendly = ''; editPolitical = '';
-    editContactsList = [{name:'',phone:'',email:''}];
-    editDogsList = [];
-    panel.dataset.lng = defaults?.lng || '';
-    panel.dataset.lat = defaults?.lat || '';
-    panel.dataset.buildingGeometry = defaults?.buildingGeometry ? JSON.stringify(defaults.buildingGeometry) : '';
+function renderETags(){document.getElementById('eTagChips').innerHTML=eTags.map((t,i)=>`<div class="tag-chip">${esc(t)} <span class="tag-x" onclick="eTags.splice(${i},1);renderETags()">✕</span></div>`).join('');}
+function addCustomTag(){const inp=document.getElementById('eTagInput');const v=inp.value.trim();if(!v)return;if(!eTags.includes(v))eTags.push(v);inp.value='';renderETags();}
+
+function openEdit(id,defaults){
+  const isNew=!id,panel=document.getElementById('editPanel');
+  if(isNew){
+    document.getElementById('eTitle').textContent='New Entry';document.getElementById('eId').value='';
+    document.getElementById('eAddr').value=fmt(defaults?.address||'');document.getElementById('ePhone').value='';
+    document.getElementById('eNotes').value='';document.getElementById('eDelBtn').style.display='none';
+    eFriendly='';ePolitical='';eContacts=[{name:'',email:''}];eDogs=[];eTags=[];
+    panel.dataset.lng=defaults?.lng||'';panel.dataset.lat=defaults?.lat||'';
+    panel.dataset.bldg=defaults?.bldg?JSON.stringify(defaults.bldg):'';
   } else {
-    const pin = pinData.find(p => p.id === id);
-    if (!pin) return;
-    document.getElementById('editTitle').textContent = 'Edit Record';
-    document.getElementById('editId').value = pin.id;
-    document.getElementById('editAddress').value = fmt(pin.address);
-    document.getElementById('editNotes').value = pin.notes || '';
-    document.getElementById('btnDeletePin').style.display = '';
-    editFriendly = pin.friendly || ''; editPolitical = pin.political || '';
-    editContactsList = (pin.contacts || []).map(c => ({...c}));
-    editDogsList = (pin.dogs || []).map(d => ({...d}));
-    if (!editContactsList.length) editContactsList.push({name:'',phone:'',email:''});
-    panel.dataset.lng = pin.lng;
-    panel.dataset.lat = pin.lat;
-    panel.dataset.buildingGeometry = pin.buildingGeometry ? JSON.stringify(pin.buildingGeometry) : '';
+    const p=pinData.find(x=>x.id===id);if(!p)return;
+    document.getElementById('eTitle').textContent='Edit Record';document.getElementById('eId').value=p.id;
+    document.getElementById('eAddr').value=fmt(p.address);document.getElementById('ePhone').value=p.phone||'';
+    document.getElementById('eNotes').value=p.notes||'';document.getElementById('eDelBtn').style.display='';
+    eFriendly=p.friendly||'';ePolitical=p.political||'';
+    eContacts=(p.contacts||[]).map(c=>({...c}));eDogs=(p.dogs||[]).map(d=>({...d}));eTags=[...(p.customTags||[])];
+    if(!eContacts.length)eContacts.push({name:'',email:''});
+    panel.dataset.lng=p.lng;panel.dataset.lat=p.lat;
+    panel.dataset.bldg=p.buildingGeometry?JSON.stringify(p.buildingGeometry):'';
   }
-  syncToggle('toggleFriendly', editFriendly);
-  syncToggle('togglePolitical', editPolitical);
-  renderEditContacts(); renderEditDogs();
-  panel.classList.add('open');
-}
-function closeEditPanel() { document.getElementById('editPanel').classList.remove('open'); }
-
-async function savePin() {
-  const panel = document.getElementById('editPanel');
-  const existingId = document.getElementById('editId').value;
-  const id = existingId || ('pin_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
-
-  // Read latest values from DOM
-  document.getElementById('editContacts').querySelectorAll('.edit-card').forEach((card, i) => {
-    const inputs = card.querySelectorAll('input');
-    if (editContactsList[i]) { editContactsList[i].name = inputs[0].value.trim(); editContactsList[i].phone = inputs[1].value.trim(); editContactsList[i].email = inputs[2].value.trim(); }
-  });
-  document.getElementById('editDogs').querySelectorAll('.edit-card').forEach((card, i) => {
-    const inputs = card.querySelectorAll('input');
-    if (editDogsList[i]) { editDogsList[i].name = inputs[0].value.trim(); editDogsList[i].breed = inputs[1].value.trim(); }
-  });
-
-  const cleanContacts = editContactsList.filter(c => c.name || c.phone || c.email);
-  const cleanDogs = editDogsList.filter(d => d.name || d.breed);
-  let bGeom = null;
-  try { bGeom = JSON.parse(panel.dataset.buildingGeometry); } catch(e) {}
-  if (!bGeom) { const ex = pinData.find(p => p.id === id); if (ex?.buildingGeometry) bGeom = ex.buildingGeometry; }
-
-  const existing = pinData.find(p => p.id === id);
-  const pin = {
-    id,
-    address: document.getElementById('editAddress').value.trim(),
-    friendly: editFriendly, political: editPolitical,
-    contacts: cleanContacts, dogs: cleanDogs,
-    notes: document.getElementById('editNotes').value.trim(),
-    lng: parseFloat(panel.dataset.lng), lat: parseFloat(panel.dataset.lat),
-    buildingGeometry: bGeom,
-    interactions: existing?.interactions || [],
-    favorites: existing?.favorites || {},
-    createdBy: existing?.createdBy || currentUser?.uid,
-    createdByName: existing?.createdByName || userName(),
-    created: existing?.created || new Date().toISOString(),
-    updated: new Date().toISOString()
-  };
-
-  await savePinToDB(pin);
-  closeEditPanel();
-  showToast('Saved');
+  syncTog('tFriendly',eFriendly);syncTog('tPolitical',ePolitical);
+  renderEC();renderED();renderETags();panel.classList.add('open');
 }
 
-async function deletePin() {
-  const id = document.getElementById('editId').value;
-  if (!id || !confirm('Delete this address?')) return;
-  await deletePinFromDB(id);
-  closeEditPanel();
-  showToast('Deleted');
+async function savePin(){
+  const panel=document.getElementById('editPanel');
+  const exId=document.getElementById('eId').value;
+  const id=exId||('pin_'+Date.now()+'_'+Math.random().toString(36).substr(2,5));
+  // Read DOM
+  document.getElementById('eContacts').querySelectorAll('.edit-card').forEach((c,i)=>{const inp=c.querySelectorAll('input');if(eContacts[i]){eContacts[i].name=inp[0].value.trim();eContacts[i].email=inp[1].value.trim();}});
+  document.getElementById('eDogs').querySelectorAll('.edit-card').forEach((c,i)=>{const inp=c.querySelectorAll('input');if(eDogs[i]){eDogs[i].name=inp[0].value.trim();eDogs[i].breed=inp[1].value.trim();}});
+  let bGeom=null;try{bGeom=JSON.parse(panel.dataset.bldg);}catch(e){}
+  if(!bGeom){const ex=pinData.find(p=>p.id===id);if(ex?.buildingGeometry)bGeom=ex.buildingGeometry;}
+  const existing=pinData.find(p=>p.id===id);
+  const pin={id,address:document.getElementById('eAddr').value.trim(),phone:document.getElementById('ePhone').value.trim(),
+    friendly:eFriendly,political:ePolitical,contacts:eContacts.filter(c=>c.name||c.email),dogs:eDogs.filter(d=>d.name||d.breed),
+    customTags:eTags,notes:document.getElementById('eNotes').value.trim(),
+    lng:parseFloat(panel.dataset.lng),lat:parseFloat(panel.dataset.lat),buildingGeometry:bGeom,
+    interactions:existing?.interactions||[],favorites:existing?.favorites||{},
+    createdBy:existing?.createdBy||currentUser?.uid,createdByName:existing?.createdByName||uname(),
+    created:existing?.created||new Date().toISOString(),updated:new Date().toISOString()};
+  await saveToDB(pin);closePanel('editPanel');showToast('Saved');
 }
 
-// ════════════════════════════════════════════
-// vCard Export
-// ════════════════════════════════════════════
-function exportVCard() {
-  const pin = pinData.find(p => p.id === currentDetailId);
-  if (!pin) return;
-  const contacts = pin.contacts || [];
-  if (!contacts.length) { showToast('No contacts to export'); return; }
-  const c = contacts[0];
-  const parts = (c.name || '').split(' ');
-  const last = parts.length > 1 ? parts.pop() : '';
-  const first = parts.join(' ');
-  let vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nN:${last};${first};;;\n`;
-  if (c.phone) vcard += `TEL;TYPE=CELL:${c.phone}\n`;
-  if (c.email) vcard += `EMAIL:${c.email}\n`;
-  if (pin.address) vcard += `ADR;TYPE=HOME:;;${fmt(pin.address)};Portland;OR;;\n`;
-  if (pin.notes) vcard += `NOTE:${pin.notes.replace(/\n/g, '\\n')}\n`;
-  vcard += `END:VCARD`;
-  const blob = new Blob([vcard], { type: 'text/vcard' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `${(c.name||'contact').replace(/\s+/g,'_')}.vcf`; a.click();
-  URL.revokeObjectURL(url);
-  showToast('vCard downloaded');
+async function deletePin(){
+  const id=document.getElementById('eId').value;if(!id||!confirm('Delete this address?'))return;
+  await pinsRef.doc(id).delete();closePanel('editPanel');showToast('Deleted');
 }
 
-// ════════════════════════════════════════════
-// Location
-// ════════════════════════════════════════════
-function goToMyLocation() {
-  if (userLng && userLat) map.flyTo({ center: [userLng, userLat], zoom: 19 });
-  else navigator.geolocation.getCurrentPosition(
-    p => { userLng = p.coords.longitude; userLat = p.coords.latitude; map.flyTo({ center: [userLng, userLat], zoom: 19 }); },
-    () => showToast('Location unavailable')
-  );
+// ═══════ vCard ═══════
+function exportVC(){
+  const p=pinData.find(x=>x.id===curDetailId);if(!p)return;
+  const cs=p.contacts||[];if(!cs.length){showToast('No contacts');return;}
+  const c=cs[0];const parts=(c.name||'').split(' ');const last=parts.length>1?parts.pop():'';const first=parts.join(' ');
+  let vc=`BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nN:${last};${first};;;\n`;
+  if(p.phone)vc+=`TEL;TYPE=CELL:${p.phone}\n`;if(c.email)vc+=`EMAIL:${c.email}\n`;
+  if(p.address)vc+=`ADR;TYPE=HOME:;;${fmt(p.address)};Portland;OR;;\n`;
+  vc+=`END:VCARD`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([vc],{type:'text/vcard'}));a.download=`${(c.name||'contact').replace(/\s+/g,'_')}.vcf`;a.click();showToast('vCard saved');
 }
 
-// ════════════════════════════════════════════
-// List View
-// ════════════════════════════════════════════
-function openListView() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const filtered = pinData.filter(p => {
-    let fOk = true;
-    if (activeFilter === 'friendly') fOk = p.friendly === 'friendly';
-    else if (activeFilter === 'not-friendly') fOk = p.friendly === 'not-friendly';
-    else if (activeFilter === 'donkey') fOk = p.political === 'donkey';
-    else if (activeFilter === 'elephant') fOk = p.political === 'elephant';
-    else if (activeFilter === 'favorited') fOk = !!p.favorites?.[currentUser?.uid];
-    const names = (p.contacts||[]).map(c=>c.name.toLowerCase()).join(' ');
-    return fOk && (!q || (p.address||'').toLowerCase().includes(q) || names.includes(q));
-  }).sort((a,b) => fmt(a.address).localeCompare(fmt(b.address)));
+// ═══════ Location ═══════
+function goToMyLocation(){
+  if(userLng&&userLat)map.flyTo({center:[userLng,userLat],zoom:18});
+  else navigator.geolocation.getCurrentPosition(p=>{userLng=p.coords.longitude;userLat=p.coords.latitude;map.flyTo({center:[userLng,userLat],zoom:18});},()=>showToast('Location unavailable'));
+}
 
-  document.getElementById('listCount').textContent = filtered.length;
-  const cont = document.getElementById('listContent');
-  if (!filtered.length) { cont.innerHTML = '<p style="text-align:center;color:var(--text-faint);padding:28px 0;">No addresses found.</p>'; }
-  else {
-    cont.innerHTML = filtered.map(p => {
-      const bgC = p.friendly === 'friendly' ? 'f-bg' : p.friendly === 'not-friendly' ? 'nf-bg' : 'n-bg';
-      let badges = '';
-      if (p.political === 'donkey') badges += '🫏';
-      if (p.political === 'elephant') badges += '🐘';
-      if ((p.dogs||[]).length) badges += '🐕';
-      if (p.favorites?.[currentUser?.uid]) badges += '❤️';
-      return `<div class="list-item" onclick="flyToPin('${p.id}')">
-        <div class="list-icon ${bgC}">${mkEmoji(p)}</div>
-        <div class="list-info"><div class="list-addr">${esc(fmt(p.address)||'No address')}</div>
-        <div class="list-meta">${esc((p.contacts||[])[0]?.name)||'<span style="color:var(--text-faint)">No contact</span>'}</div></div>
-        <div class="list-badges">${badges}</div></div>`;
-    }).join('');
-  }
+// ═══════ List ═══════
+function openListView(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const fl=pinData.filter(p=>{
+    let ok=true;
+    if(activeFilter==='friendly')ok=p.friendly==='friendly';else if(activeFilter==='not-friendly')ok=p.friendly==='not-friendly';
+    else if(activeFilter==='donkey')ok=p.political==='donkey';else if(activeFilter==='elephant')ok=p.political==='elephant';
+    else if(activeFilter==='starred')ok=!!p.favorites?.[currentUser?.uid];
+    const nm=(p.contacts||[]).map(c=>c.name.toLowerCase()).join(' ');
+    return ok&&(!q||(p.address||'').toLowerCase().includes(q)||nm.includes(q));
+  }).sort((a,b)=>fmt(a.address).localeCompare(fmt(b.address)));
+  document.getElementById('listN').textContent=fl.length;
+  document.getElementById('listC').innerHTML=fl.length?fl.map(p=>{
+    const bg=p.friendly==='friendly'?'f':p.friendly==='not-friendly'?'nf':'n';
+    let bd='';if(p.political==='donkey')bd+='🫏';if(p.political==='elephant')bd+='🐘';if((p.dogs||[]).length)bd+='🐕';if(p.favorites?.[currentUser?.uid])bd+='⭐';
+    return `<div class="list-item" onclick="flyTo('${p.id}')"><div class="li-icon ${bg}">${mkEmoji(p)}</div><div class="li-info"><div class="li-addr">${esc(fmt(p.address)||'No address')}</div><div class="li-sub">${esc((p.contacts||[])[0]?.name)||'No contact'}</div></div><div class="li-badges">${bd}</div></div>`;
+  }).join(''):'<p style="text-align:center;color:var(--c-tertiary);padding:28px 0;">No addresses.</p>';
   document.getElementById('listPanel').classList.add('open');
 }
+function flyTo(id){const p=pinData.find(x=>x.id===id);if(!p)return;closePanel('listPanel');map.flyTo({center:[p.lng,p.lat],zoom:19});setTimeout(()=>openDetail(id),600);}
 
-function closeListPanel() { closePanel('listPanel'); }
-function flyToPin(id) {
-  const pin = pinData.find(p => p.id === id); if (!pin) return;
-  closePanel('listPanel');
-  map.flyTo({ center: [pin.lng, pin.lat], zoom: 19 });
-  setTimeout(() => openDetailPanel(id), 600);
-}
+// ═══════ Filters / Settings / Utils ═══════
+function toggleFilters(){document.getElementById('filterBar').classList.toggle('visible');}
+function setFilter(f){activeFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===f));applyFilters();}
+function openSettings(){document.getElementById('sUser').textContent=currentUser?.email||'';document.getElementById('settingsPanel').classList.add('open');}
+function openHelp(){document.getElementById('helpPanel').classList.add('open');}
+function updCt(){const el=document.getElementById('pinCt');if(el)el.textContent=pinData.length;}
+function closeOv(e,id){if(e.target===document.getElementById(id))closePanel(id);}
+function esc(s){if(!s)return '';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function showToast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2000);}
+function saveSettings(){closePanel('settingsPanel');}
 
-// ════════════════════════════════════════════
-// Filters / Settings / Utils
-// ════════════════════════════════════════════
-function toggleFilters() { document.getElementById('filterBar').classList.toggle('visible'); }
-function setFilter(f) {
-  activeFilter = f;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
-  applyFilters();
-}
-function openSettings() {
-  document.getElementById('settingsToken').value = localStorage.getItem('mapbox_token') || '';
-  document.getElementById('settingsStyle').value = localStorage.getItem('map_style') || 'mapbox://styles/mapbox/streets-v12';
-  document.getElementById('settingsUser').textContent = currentUser?.email || '';
-  document.getElementById('settingsPanel').classList.add('open');
-}
-function saveSettings() {
-  const t = document.getElementById('settingsToken').value.trim();
-  if (t) localStorage.setItem('mapbox_token', t);
-  closePanel('settingsPanel'); showToast('Saved');
-}
-function changeMapStyle() {
-  const s = document.getElementById('settingsStyle').value;
-  localStorage.setItem('map_style', s);
-  if (map) { map.setStyle(s); map.once('style.load', () => { renderAllMarkers(); addBuildingColorLayer(); }); }
-}
-function openHelp() { document.getElementById('helpPanel').classList.add('open'); }
-function updatePinCount() { const el = document.getElementById('pinCount'); if (el) el.textContent = pinData.length; }
-function closePanel(id) { document.getElementById(id).classList.remove('open'); }
-function closeOnOverlay(e, id) { if (e.target === document.getElementById(id)) closePanel(id); }
-function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function showToast(m) { const el = document.getElementById('toast'); el.textContent = m; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
-
-// ════════════════════════════════════════════
-// Export / Import
-// ════════════════════════════════════════════
-function exportData() {
-  const blob = new Blob([JSON.stringify(pinData, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `hornhud-${new Date().toISOString().slice(0,10)}.json`; a.click(); showToast('Exported');
-}
-async function importData(event) {
-  const file = event.target.files[0]; if (!file) return;
-  try {
-    const data = JSON.parse(await file.text());
-    if (!Array.isArray(data)) throw new Error();
-    let c = 0;
-    for (const pin of data) {
-      if (!pin.lng || !pin.lat) continue;
-      if (!pin.id) pin.id = 'pin_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
-      if (pin.category) { pin.friendly = (pin.category==='friendly'||pin.category==='not-friendly') ? pin.category : ''; delete pin.category; }
-      if (!pin.contacts) pin.contacts = pin.owner ? [{name:pin.owner,phone:pin.phone||'',email:pin.email||''}] : [];
-      if (!pin.dogs) pin.dogs = []; if (!pin.political) pin.political = '';
-      if (!pin.interactions) pin.interactions = []; if (!pin.favorites) pin.favorites = {};
-      if (!pin.createdBy) { pin.createdBy = currentUser?.uid; pin.createdByName = userName(); }
-      await savePinToDB(pin); c++;
-    }
-    showToast(`Imported ${c}`);
-  } catch(e) { showToast('Import failed'); }
-  event.target.value = '';
+// ═══════ Export / Import ═══════
+function exportJSON(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pinData,null,2)],{type:'application/json'}));a.download=`hornhud-${new Date().toISOString().slice(0,10)}.json`;a.click();showToast('Exported');}
+async function importJSON(ev){
+  const file=ev.target.files[0];if(!file)return;
+  try{const data=JSON.parse(await file.text());if(!Array.isArray(data))throw 0;let c=0;
+  for(const pin of data){if(!pin.lng||!pin.lat)continue;if(!pin.id)pin.id='pin_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+  if(pin.category){pin.friendly=(pin.category==='friendly'||pin.category==='not-friendly')?pin.category:'';delete pin.category;}
+  if(!pin.contacts)pin.contacts=pin.owner?[{name:pin.owner,email:pin.email||''}]:[];if(!pin.dogs)pin.dogs=[];if(!pin.political)pin.political='';
+  if(!pin.interactions)pin.interactions=[];if(!pin.favorites)pin.favorites={};if(!pin.customTags)pin.customTags=[];
+  if(!pin.createdBy){pin.createdBy=currentUser?.uid;pin.createdByName=uname();}
+  await saveToDB(pin);c++;}showToast(`Imported ${c}`);}catch(e){showToast('Import failed');}ev.target.value='';
 }
 
-// ════════════════════════════════════════════
-// Boot
-// ════════════════════════════════════════════
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body>
 </html>

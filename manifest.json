@@ -1,7 +1,7 @@
 {
-  "name": "NeighborMap",
-  "short_name": "NeighborMap",
-  "description": "Tag and track addresses in your neighborhood",
+  "name": "hornhüd",
+  "short_name": "hornhüd",
+  "description": "Know your neighborhood",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",

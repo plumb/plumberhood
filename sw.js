@@ -1,4 +1,4 @@
-const CACHE_NAME = 'neighbormap-v1';
+const CACHE_NAME = 'hornhud-v2';
 const ASSETS = [
   './',
   './index.html',

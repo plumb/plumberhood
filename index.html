@@ -11,338 +11,405 @@
   <title>hornhüd</title>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
   <style>
     :root {
       --text-primary: #1a1a1a;
       --text-secondary: #6b7280;
       --text-tertiary: #9ca3af;
-      --bg-primary: #ffffff;
+      --text-faint: #d1d5db;
+      --bg: #ffffff;
       --bg-secondary: #f9fafb;
       --bg-tertiary: #f3f4f6;
       --border: #e5e7eb;
-      --border-light: #f0f0f0;
+      --border-light: #f3f4f6;
       --blue: #3b82f6;
       --blue-dark: #2563eb;
       --green: #22c55e;
       --red: #ef4444;
-      --political-blue: #2563eb;
-      --political-red: #dc2626;
+      --pol-blue: #2563eb;
+      --pol-red: #dc2626;
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
       --radius-xl: 20px;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.07);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.10);
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
       overflow: hidden; height: 100vh; height: -webkit-fill-available;
-      -webkit-tap-highlight-color: transparent;
-      color: var(--text-primary);
+      -webkit-tap-highlight-color: transparent; color: var(--text-primary);
       -webkit-font-smoothing: antialiased;
     }
-
     #map { width: 100%; height: 100vh; height: -webkit-fill-available; }
-    .mapboxgl-ctrl-top-right { top: 100px !important; }
+    .mapboxgl-ctrl-top-right { top: 60px !important; }
 
-    /* ─── Top bar ─── */
+    /* ── Top bar (compact) ── */
     .top-bar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-      background: rgba(255,255,255,0.94); backdrop-filter: blur(16px);
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      padding: 52px 14px 10px; display: flex; align-items: center; gap: 10px;
-      border-bottom: 1px solid rgba(0,0,0,0.06);
+      padding: 48px 12px 8px; display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
     }
-    .app-name {
-      font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
-      white-space: nowrap; color: var(--text-primary);
-    }
+    .top-bar.hidden { display: none; }
     .search-wrap { flex: 1; }
     .search-wrap input {
-      width: 100%; padding: 9px 14px; border-radius: var(--radius-md); border: 1px solid var(--border);
-      font-size: 15px; background: var(--bg-secondary); color: var(--text-primary);
-      transition: border-color 0.2s, background 0.2s;
+      width: 100%; padding: 9px 12px; border-radius: var(--radius-md);
+      border: 1px solid var(--border); font-size: 15px; background: var(--bg-secondary);
+      color: var(--text-primary); transition: 0.2s;
     }
     .search-wrap input::placeholder { color: var(--text-tertiary); }
-    .search-wrap input:focus { background: var(--bg-primary); border-color: var(--blue); outline: none; }
-
+    .search-wrap input:focus { background: var(--bg); border-color: var(--blue); outline: none; }
     .icon-btn {
-      width: 38px; height: 38px; border-radius: 50%; border: none;
-      background: var(--bg-tertiary); font-size: 17px; display: flex; align-items: center;
-      justify-content: center; cursor: pointer; flex-shrink: 0;
-      transition: transform 0.12s, background 0.12s;
+      width: 36px; height: 36px; border-radius: 50%; border: none;
+      background: var(--bg-tertiary); font-size: 16px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; flex-shrink: 0; transition: 0.12s;
     }
     .icon-btn:active { background: var(--border); transform: scale(0.93); }
 
-    /* ─── Filter bar ─── */
+    /* ── Filter bar ── */
     .filter-bar {
-      position: fixed; top: 100px; left: 0; right: 0; z-index: 8;
-      padding: 8px 14px; display: none; gap: 6px; overflow-x: auto;
+      position: fixed; top: 92px; left: 0; right: 0; z-index: 8;
+      padding: 6px 12px; display: none; gap: 5px; overflow-x: auto;
       background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      -webkit-overflow-scrolling: touch;
     }
     .filter-bar.visible { display: flex; }
     .filter-chip {
-      padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
-      border: 1.5px solid var(--border); background: var(--bg-primary); white-space: nowrap;
-      cursor: pointer; color: var(--text-secondary); transition: all 0.15s;
+      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid var(--border); background: var(--bg); white-space: nowrap;
+      cursor: pointer; color: var(--text-secondary); transition: 0.15s;
     }
     .filter-chip:active { transform: scale(0.95); }
     .filter-chip.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 
-    /* ─── FAB ─── */
-    .fab {
-      position: fixed; bottom: 104px; right: 16px; z-index: 11;
-      width: 60px; height: 60px; border-radius: 50%; border: none;
-      background: var(--blue); color: #fff; font-size: 30px; font-weight: 300;
-      box-shadow: 0 4px 16px rgba(59,130,246,0.35);
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .fab:active { transform: scale(0.9); box-shadow: 0 2px 8px rgba(59,130,246,0.25); }
-    .fab.loading { opacity: 0.6; pointer-events: none; }
-
-    /* ─── Bottom bar ─── */
+    /* ── Bottom bar ── */
     .bottom-bar {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
       background: rgba(255,255,255,0.95); backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      padding: 10px 14px 32px; display: flex; gap: 8px;
-      border-top: 1px solid rgba(0,0,0,0.06);
+      padding: 8px 12px 30px; display: flex; gap: 8px;
+      border-top: 1px solid rgba(0,0,0,0.05);
     }
+    .bottom-bar.hidden { display: none; }
     .bottom-bar button {
-      flex: 1; padding: 13px 8px; border-radius: var(--radius-md); border: none;
-      font-size: 14px; font-weight: 600; cursor: pointer;
-      transition: transform 0.1s;
+      flex: 1; padding: 12px 8px; border-radius: var(--radius-md); border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.1s;
     }
     .bottom-bar button:active { transform: scale(0.97); }
     .btn-primary { background: var(--blue); color: #fff; }
     .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); }
 
-    /* ─── Panel system ─── */
+    /* ── Panels ── */
     .panel-overlay {
       position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.3);
       display: none; align-items: flex-end; justify-content: center;
-      transition: background 0.2s;
     }
     .panel-overlay.open { display: flex; }
     .panel {
-      background: var(--bg-primary); border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      background: var(--bg); border-radius: var(--radius-xl) var(--radius-xl) 0 0;
       width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
       padding: 4px 20px 40px;
-      animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+      animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1);
       -webkit-overflow-scrolling: touch;
     }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .panel-handle {
-      width: 36px; height: 4px; border-radius: 2px; background: var(--border);
-      margin: 10px auto 16px;
-    }
-    .panel h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
-    .panel-subtitle { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; margin-bottom: 16px; }
-    .section-label {
+    .panel-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto 14px; }
+    .panel h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .panel-sub { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
+    .section-title {
       font-size: 11px; font-weight: 700; color: var(--text-tertiary);
       text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 0 8px;
     }
-    .panel label {
-      display: block; font-size: 13px; font-weight: 600;
-      color: var(--text-secondary); margin: 14px 0 5px;
-    }
+    .panel label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 12px 0 4px; }
     .panel input, .panel textarea, .panel select {
-      width: 100%; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
-      font-size: 16px; font-family: inherit; background: var(--bg-secondary);
-      color: var(--text-primary); transition: border-color 0.2s, background 0.2s;
+      width: 100%; padding: 11px 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); font-size: 16px; font-family: inherit;
+      background: var(--bg-secondary); color: var(--text-primary); transition: 0.2s;
     }
-    .panel input::placeholder, .panel textarea::placeholder { color: var(--text-tertiary); }
-    .panel input:focus, .panel textarea:focus { background: var(--bg-primary); border-color: var(--blue); outline: none; }
-    .panel textarea { resize: vertical; min-height: 70px; }
+    .panel input::placeholder, .panel textarea::placeholder { color: var(--text-faint); }
+    .panel input:focus, .panel textarea:focus { background: var(--bg); border-color: var(--blue); outline: none; }
+    .panel textarea { resize: vertical; min-height: 60px; }
 
-    /* ─── Emoji toggles ─── */
-    .toggle-row {
-      display: flex; align-items: center; gap: 12px; padding: 10px 0;
-    }
+    /* ── Emoji toggles ── */
+    .toggle-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
     .toggle-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); flex: 1; }
-    .emoji-toggle {
-      display: flex; gap: 3px; background: var(--bg-tertiary); border-radius: var(--radius-md); padding: 3px;
-    }
+    .emoji-toggle { display: flex; gap: 3px; background: var(--bg-tertiary); border-radius: var(--radius-md); padding: 3px; }
     .emoji-opt {
-      width: 46px; height: 42px; border-radius: var(--radius-sm); border: none;
+      width: 46px; height: 40px; border-radius: var(--radius-sm); border: 2px solid transparent;
       font-size: 20px; background: transparent; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s; opacity: 0.35;
+      transition: 0.15s; opacity: 0.3;
     }
     .emoji-opt:active { transform: scale(0.9); }
-    .emoji-opt.selected { background: var(--bg-primary); box-shadow: var(--shadow-sm); opacity: 1; }
+    .emoji-opt.selected { background: var(--bg); box-shadow: var(--shadow-sm); opacity: 1; border-color: transparent; }
+    .emoji-opt.selected[data-val="donkey"] { background: #dbeafe; border-color: var(--pol-blue); }
+    .emoji-opt.selected[data-val="elephant"] { background: #fee2e2; border-color: var(--pol-red); }
 
-    /* ─── Panel buttons ─── */
-    .panel-actions { display: flex; gap: 8px; margin-top: 24px; }
+    /* ── Panel actions ── */
+    .panel-actions { display: flex; gap: 8px; margin-top: 20px; }
     .panel-actions button {
-      flex: 1; padding: 14px; border-radius: var(--radius-md); border: none;
-      font-size: 16px; font-weight: 600; cursor: pointer;
-      transition: transform 0.1s;
+      flex: 1; padding: 13px; border-radius: var(--radius-md); border: none;
+      font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.1s;
     }
     .panel-actions button:active { transform: scale(0.97); }
     .btn-save { background: var(--blue); color: #fff; }
     .btn-cancel { background: var(--bg-tertiary); color: var(--text-secondary); }
     .btn-delete { background: #fef2f2; color: var(--red); }
-    .btn-edit { background: var(--bg-tertiary); color: var(--text-primary); }
 
-    /* ─── Detail view ─── */
-    .detail-section { padding: 14px 0; border-bottom: 1px solid var(--border-light); }
+    /* ── Detail view ── */
+    .detail-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
+    .detail-header h2 { flex: 1; }
+    .fav-btn {
+      width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--bg-tertiary);
+      font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: 0.15s;
+    }
+    .fav-btn:active { transform: scale(0.9); }
+    .fav-btn.active { background: #fef3c7; }
+
+    .detail-section { padding: 12px 0; border-bottom: 1px solid var(--border-light); }
     .detail-section:last-of-type { border: none; }
-    .detail-label {
-      font-size: 11px; font-weight: 700; color: var(--text-tertiary);
-      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;
-    }
-    .detail-value { font-size: 15px; color: var(--text-primary); line-height: 1.4; }
-    .detail-value.empty { color: var(--text-tertiary); font-style: italic; font-size: 14px; }
-    .detail-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-    .detail-tag {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
-    }
-    .detail-tag.friendly { background: #ecfdf5; color: #166534; }
-    .detail-tag.not-friendly { background: #fef2f2; color: #991b1b; }
-    .detail-tag.donkey { background: #eff6ff; color: #1e40af; }
-    .detail-tag.elephant { background: #fef2f2; color: #991b1b; }
-    .detail-tag-emoji { font-size: 16px; }
+    .detail-label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .detail-value { font-size: 15px; color: var(--text-primary); line-height: 1.5; }
+    .detail-value.empty { color: var(--text-faint); font-style: italic; font-size: 14px; }
 
-    /* Contact card */
+    .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .tag-pill.friendly { background: #ecfdf5; color: #166534; }
+    .tag-pill.not-friendly { background: #fef2f2; color: #991b1b; }
+    .tag-pill.donkey { background: #dbeafe; color: #1e40af; }
+    .tag-pill.elephant { background: #fee2e2; color: #991b1b; }
+    .tag-pill .tag-emoji { font-size: 14px; }
+
+    /* Contact card in detail */
     .contact-card {
       background: var(--bg-secondary); border-radius: var(--radius-sm);
       padding: 10px 12px; margin-bottom: 6px;
     }
-    .contact-card .contact-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-    .contact-card .contact-meta { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+    .contact-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .contact-link {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 14px;
+      color: var(--blue); text-decoration: none; margin-top: 3px;
+    }
+    .contact-link:active { opacity: 0.7; }
 
-    /* Dog card */
+    /* Dog card in detail */
     .dog-card {
       background: var(--bg-secondary); border-radius: var(--radius-sm);
       padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
     }
-    .dog-card .dog-emoji { font-size: 20px; }
-    .dog-card .dog-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-    .dog-card .dog-breed { font-size: 13px; color: var(--text-secondary); }
+    .dog-emoji { font-size: 20px; }
+    .dog-name { font-size: 15px; font-weight: 600; }
+    .dog-breed { font-size: 13px; color: var(--text-secondary); }
 
-    /* ─── Editable list items (contacts, dogs) ─── */
+    /* Interaction log */
+    .interaction-item {
+      padding: 10px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .interaction-item:last-child { border: none; }
+    .interaction-note { font-size: 14px; color: var(--text-primary); }
+    .interaction-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+
+    /* Photo gallery */
+    .photo-gallery {
+      display: flex; gap: 8px; overflow-x: auto; padding: 4px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .photo-thumb {
+      width: 80px; height: 80px; border-radius: var(--radius-sm); object-fit: cover;
+      flex-shrink: 0; cursor: pointer; border: 1px solid var(--border);
+    }
+    .photo-thumb:active { opacity: 0.8; }
+    .photo-add-btn {
+      width: 80px; height: 80px; border-radius: var(--radius-sm); border: 1.5px dashed var(--border);
+      background: transparent; font-size: 24px; color: var(--text-tertiary);
+      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .photo-add-btn:active { background: var(--bg-secondary); }
+
+    /* Edit cards (contacts, dogs) */
     .edit-card {
       background: var(--bg-secondary); border-radius: var(--radius-sm);
       padding: 12px; margin-bottom: 8px; position: relative;
     }
-    .edit-card input {
-      background: var(--bg-primary); margin-bottom: 6px;
-    }
-    .edit-card input:last-child { margin-bottom: 0; }
+    .edit-card input { background: var(--bg); margin-bottom: 6px; }
+    .edit-card input:last-of-type { margin-bottom: 0; }
     .remove-card {
-      position: absolute; top: 8px; right: 8px; width: 28px; height: 28px;
+      position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
       border-radius: 50%; border: none; background: #fef2f2; color: var(--red);
-      font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
-    .remove-card:active { background: #fee2e2; }
     .add-btn {
       width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1.5px dashed var(--border);
       background: transparent; color: var(--text-tertiary); font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: all 0.15s;
+      cursor: pointer; transition: 0.15s;
     }
-    .add-btn:active { background: var(--bg-secondary); border-color: var(--text-tertiary); }
+    .add-btn:active { background: var(--bg-secondary); }
 
-    /* ─── List view ─── */
+    /* List view */
     .list-item {
-      padding: 14px 2px; border-bottom: 1px solid var(--border-light);
+      padding: 12px 2px; border-bottom: 1px solid var(--border-light);
       display: flex; align-items: center; gap: 12px; cursor: pointer;
     }
     .list-item:active { background: var(--bg-secondary); border-radius: var(--radius-sm); }
     .list-icon {
-      width: 40px; height: 40px; border-radius: var(--radius-sm);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
+      width: 38px; height: 38px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;
     }
-    .list-icon.friendly-bg { background: #ecfdf5; }
-    .list-icon.not-friendly-bg { background: #fef2f2; }
-    .list-icon.neutral-bg { background: var(--bg-tertiary); }
+    .list-icon.f-bg { background: #ecfdf5; }
+    .list-icon.nf-bg { background: #fef2f2; }
+    .list-icon.n-bg { background: var(--bg-tertiary); }
     .list-info { flex: 1; min-width: 0; }
-    .list-addr { font-weight: 600; font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .list-meta { font-size: 13px; color: var(--text-tertiary); margin-top: 1px; }
-    .list-badges { display: flex; gap: 4px; flex-shrink: 0; }
-    .list-badge { font-size: 16px; }
+    .list-addr { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 1px; }
+    .list-badges { display: flex; gap: 3px; flex-shrink: 0; font-size: 15px; }
 
-    /* ─── Settings ─── */
-    .settings-row { padding: 14px 0; border-bottom: 1px solid var(--border-light); }
+    /* Settings */
+    .settings-row { padding: 12px 0; border-bottom: 1px solid var(--border-light); }
     .settings-row:last-child { border: none; }
 
-    /* ─── Toast ─── */
+    /* Toast */
     .toast {
-      position: fixed; top: 108px; left: 50%; transform: translateX(-50%);
+      position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
       background: var(--text-primary); color: #fff; padding: 10px 20px;
       border-radius: var(--radius-md); font-size: 14px; font-weight: 500;
-      z-index: 200; opacity: 0; transition: opacity 0.3s;
-      pointer-events: none; white-space: nowrap; box-shadow: var(--shadow-lg);
+      z-index: 300; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+      box-shadow: var(--shadow-lg); white-space: nowrap;
     }
     .toast.show { opacity: 1; }
 
-    /* ─── Setup screen ─── */
-    .setup-screen {
+    /* Login screen */
+    .auth-screen {
       position: fixed; inset: 0; z-index: 500; background: #fff;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 24px;
     }
+    .auth-screen.hidden { display: none; }
+    .auth-screen h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+    .auth-screen .subtitle { font-size: 15px; color: var(--text-tertiary); margin-bottom: 32px; }
+    .auth-screen input {
+      width: 100%; max-width: 320px; padding: 12px 14px; border-radius: var(--radius-md);
+      border: 1px solid var(--border); font-size: 16px; margin-bottom: 10px;
+      background: var(--bg-secondary);
+    }
+    .auth-screen input:focus { border-color: var(--blue); outline: none; background: #fff; }
+    .auth-screen button {
+      width: 100%; max-width: 320px; padding: 14px; border-radius: var(--radius-md);
+      border: none; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 6px;
+    }
+    .auth-screen .auth-error { color: var(--red); font-size: 13px; margin-top: 8px; max-width: 320px; text-align: center; }
+
+    /* Setup screen (Mapbox token) */
+    .setup-screen {
+      position: fixed; inset: 0; z-index: 400; background: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px;
+    }
     .setup-screen.hidden { display: none; }
-    .setup-screen h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
-    .setup-screen .subtitle { font-size: 15px; color: var(--text-tertiary); margin-bottom: 32px; }
-    .setup-screen p { color: var(--text-secondary); text-align: center; margin-bottom: 24px; max-width: 320px; font-size: 15px; line-height: 1.5; }
-    .setup-screen input { max-width: 360px; }
-    .setup-screen button {
-      margin-top: 16px; max-width: 360px; width: 100%; padding: 14px;
-      border-radius: var(--radius-md); border: none; font-size: 16px;
-      font-weight: 600; cursor: pointer;
-    }
+    .setup-screen h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .setup-screen p { color: var(--text-secondary); text-align: center; margin-bottom: 20px; max-width: 320px; font-size: 15px; line-height: 1.5; }
+    .setup-screen input { width: 100%; max-width: 340px; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); font-size: 16px; background: var(--bg-secondary); }
+    .setup-screen input:focus { border-color: var(--blue); outline: none; background: #fff; }
+    .setup-screen button { width: 100%; max-width: 340px; margin-top: 12px; padding: 14px; border-radius: var(--radius-md); border: none; font-size: 16px; font-weight: 600; cursor: pointer; }
 
-    /* ─── Marker pin ─── */
+    /* Marker */
+    .marker-wrap { position: relative; cursor: pointer; }
     .marker-pin {
-      width: 34px; height: 34px; border-radius: 50% 50% 50% 4px;
-      border: 3px solid #fff; cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      display: flex; align-items: center; justify-content: center;
-      transform: rotate(-45deg); transition: transform 0.12s;
+      width: 32px; height: 32px; border-radius: 50% 50% 50% 4px;
+      border: 2.5px solid #fff; display: flex; align-items: center; justify-content: center;
+      transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: 0.12s;
     }
-    .marker-pin:active { transform: rotate(-45deg) scale(1.15); }
-    .marker-pin .marker-emoji { transform: rotate(45deg); font-size: 15px; line-height: 1; }
-    .marker-label {
-      position: absolute; top: 38px; left: 50%; transform: translateX(-50%);
-      background: rgba(255,255,255,0.92); padding: 2px 7px; border-radius: 4px;
-      font-size: 11px; font-weight: 600; white-space: nowrap; max-width: 130px;
-      overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-sm);
-      pointer-events: none; display: none; color: var(--text-primary);
-    }
-    .show-labels .marker-label { display: block; }
+    .marker-pin:active { transform: rotate(-45deg) scale(1.12); }
+    .marker-emoji { transform: rotate(45deg); font-size: 14px; line-height: 1; }
 
-    /* ─── Building highlight ─── */
-    .mapboxgl-popup-content { padding: 8px 12px !important; border-radius: 8px !important; }
-    .building-popup { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    /* Building info card (shown at high zoom on tagged buildings) */
+    .bldg-card {
+      position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: var(--radius-sm); padding: 5px 9px;
+      box-shadow: var(--shadow-md); pointer-events: none;
+      white-space: nowrap; max-width: 160px; overflow: hidden;
+      display: none; border: 1px solid rgba(0,0,0,0.06);
+    }
+    .show-cards .bldg-card { display: block; }
+    .bldg-card-name { font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; }
+    .bldg-card-icons { font-size: 12px; margin-top: 1px; }
+
+    /* Fav indicator on marker */
+    .marker-fav {
+      position: absolute; top: -4px; right: -4px; font-size: 12px;
+      background: #fef3c7; border-radius: 50%; width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm); display: none;
+    }
+    .marker-fav.active { display: flex; }
+
+    /* Photo viewer */
+    .photo-viewer {
+      position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.9);
+      display: none; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .photo-viewer.open { display: flex; }
+    .photo-viewer img { max-width: 95%; max-height: 90vh; object-fit: contain; border-radius: 4px; }
+
+    /* Help page */
+    .help-content h3 { font-size: 16px; font-weight: 700; margin: 18px 0 6px; color: var(--text-primary); }
+    .help-content h3:first-child { margin-top: 4px; }
+    .help-content p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
+    .help-content .help-step { display: flex; gap: 10px; margin-bottom: 8px; }
+    .help-content .step-num {
+      width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff;
+      font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .help-content .step-text { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+
+    /* User badge */
+    .user-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+      background: var(--bg-tertiary); color: var(--text-secondary);
+    }
   </style>
 </head>
 <body>
 
-<!-- Setup -->
-<div class="setup-screen" id="setupScreen">
+<!-- Auth Screen -->
+<div class="auth-screen" id="authScreen">
   <h1>hornhüd</h1>
   <div class="subtitle">know your neighborhood</div>
-  <p>Enter your Mapbox access token to get started. Get a free one at <a href="https://mapbox.com" target="_blank" style="color:var(--blue)">mapbox.com</a>.</p>
+  <input type="email" id="authEmail" placeholder="Email">
+  <input type="password" id="authPass" placeholder="Password">
+  <button class="btn-primary" onclick="doLogin()">Sign In</button>
+  <div class="auth-error" id="authError"></div>
+</div>
+
+<!-- Setup Screen (Mapbox token) -->
+<div class="setup-screen hidden" id="setupScreen">
+  <h2>One more thing</h2>
+  <p>Enter your Mapbox access token. Both users only need to do this once on their device.</p>
   <input type="text" id="setupToken" placeholder="pk.eyJ1Ijo...">
-  <button class="btn-primary" onclick="saveToken()">Get Started</button>
+  <button class="btn-primary" onclick="saveMapboxToken()">Continue</button>
 </div>
 
 <!-- Top Bar -->
-<div class="top-bar">
-  <span class="app-name">hornhüd</span>
+<div class="top-bar hidden" id="topBar">
   <div class="search-wrap">
-    <input type="text" id="searchInput" placeholder="Search..." oninput="applyFilters()">
+    <input type="text" id="searchInput" placeholder="Search addresses or names..." oninput="applyFilters()">
   </div>
-  <button class="icon-btn" id="filterToggle" onclick="toggleFilters()">🏷️</button>
+  <button class="icon-btn" onclick="toggleFilters()">🏷️</button>
+  <button class="icon-btn" onclick="openHelp()">?</button>
   <button class="icon-btn" onclick="openSettings()">⚙️</button>
 </div>
 
@@ -351,58 +418,92 @@
   <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
   <div class="filter-chip" data-filter="friendly" onclick="setFilter('friendly')">😊 Friendly</div>
   <div class="filter-chip" data-filter="not-friendly" onclick="setFilter('not-friendly')">😠 Not Friendly</div>
-  <div class="filter-chip" data-filter="donkey" onclick="setFilter('donkey')">🫏 Donkey</div>
-  <div class="filter-chip" data-filter="elephant" onclick="setFilter('elephant')">🐘 Elephant</div>
+  <div class="filter-chip" data-filter="donkey" onclick="setFilter('donkey')">🫏</div>
+  <div class="filter-chip" data-filter="elephant" onclick="setFilter('elephant')">🐘</div>
+  <div class="filter-chip" data-filter="favorited" onclick="setFilter('favorited')">❤️ Favorites</div>
 </div>
 
 <div id="map"></div>
 
-<!-- Quick Tag FAB -->
-<button class="fab" id="fabQuickTag" onclick="quickTag()" title="Tag this address">+</button>
-
 <!-- Bottom Bar -->
-<div class="bottom-bar">
+<div class="bottom-bar hidden" id="bottomBar">
   <button class="btn-primary" onclick="goToMyLocation()">📍 My Location</button>
   <button class="btn-secondary" onclick="openListView()">📋 List</button>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- ─── Detail Panel (Read-Only) ─── -->
+<!-- Photo Viewer -->
+<div class="photo-viewer" id="photoViewer" onclick="this.classList.remove('open')">
+  <img id="photoViewerImg" src="">
+</div>
+
+<!-- ─── Detail Panel ─── -->
 <div class="panel-overlay" id="detailPanel" onclick="closeOnOverlay(event,'detailPanel')">
   <div class="panel">
     <div class="panel-handle"></div>
-    <h2 id="detailAddr"></h2>
-    <div class="panel-subtitle" id="detailCoords"></div>
+    <div class="detail-header">
+      <div>
+        <h2 id="detailAddr"></h2>
+        <div class="panel-sub" id="detailCreatedBy"></div>
+      </div>
+      <button class="fav-btn" id="favBtn" onclick="toggleFavorite()">🤍</button>
+    </div>
 
     <div class="detail-section">
-      <div class="detail-label">Tags</div>
       <div class="detail-tags" id="detailTags"></div>
     </div>
 
-    <div class="detail-section" id="detailContactsSection">
+    <div class="detail-section" id="detailContactsSec">
       <div class="detail-label">Contacts</div>
       <div id="detailContacts"></div>
     </div>
 
-    <div class="detail-section" id="detailDogsSection">
+    <div class="detail-section" id="detailDogsSec">
       <div class="detail-label">Dogs</div>
       <div id="detailDogs"></div>
     </div>
 
-    <div class="detail-section" id="detailNotesSection">
+    <div class="detail-section" id="detailPhotosSec">
+      <div class="detail-label">Photos</div>
+      <div class="photo-gallery" id="detailPhotos"></div>
+    </div>
+
+    <div class="detail-section" id="detailNotesSec">
       <div class="detail-label">Notes</div>
       <div class="detail-value" id="detailNotes"></div>
     </div>
 
+    <div class="detail-section" id="detailInteractionsSec">
+      <div style="display:flex;align-items:center;margin-bottom:8px;">
+        <div class="detail-label" style="margin:0;flex:1;">Interactions</div>
+        <button class="add-btn" style="width:auto;padding:4px 12px;font-size:12px;" onclick="openAddInteraction()">+ Log</button>
+      </div>
+      <div id="detailInteractions"></div>
+    </div>
+
     <div class="detail-section">
-      <div class="detail-label">Last Updated</div>
-      <div class="detail-value" id="detailUpdated" style="font-size:13px;color:var(--text-tertiary);"></div>
+      <div style="font-size:12px;color:var(--text-faint);" id="detailTimestamps"></div>
     </div>
 
     <div class="panel-actions">
       <button class="btn-cancel" onclick="closeDetailPanel()">Close</button>
-      <button class="btn-edit" onclick="editFromDetail()">✏️ Edit</button>
+      <button class="btn-save" onclick="exportVCard()" style="background:var(--bg-tertiary);color:var(--text-secondary);">📇 vCard</button>
+      <button class="btn-save" onclick="editFromDetail()">✏️ Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Add Interaction Panel ─── -->
+<div class="panel-overlay" id="interactionPanel" onclick="closeOnOverlay(event,'interactionPanel')">
+  <div class="panel">
+    <div class="panel-handle"></div>
+    <h2>Log Interaction</h2>
+    <label>What happened?</label>
+    <textarea id="interactionNote" placeholder="Stopped by to chat, met their dog, dropped off cookies..."></textarea>
+    <div class="panel-actions">
+      <button class="btn-cancel" onclick="closePanel('interactionPanel')">Cancel</button>
+      <button class="btn-save" onclick="saveInteraction()">Save</button>
     </div>
   </div>
 </div>
@@ -411,14 +512,13 @@
 <div class="panel-overlay" id="editPanel" onclick="closeOnOverlay(event,'editPanel')">
   <div class="panel">
     <div class="panel-handle"></div>
-    <h2 id="editTitle">Tag This Address</h2>
+    <h2 id="editTitle">New Entry</h2>
     <input type="hidden" id="editId">
 
     <label>Address</label>
     <input type="text" id="editAddress" placeholder="123 NE Main St">
 
-    <div class="section-label">Tags</div>
-
+    <div class="section-title">Tags</div>
     <div class="toggle-row">
       <div class="toggle-label">Disposition</div>
       <div class="emoji-toggle" id="toggleFriendly">
@@ -427,7 +527,6 @@
         <button class="emoji-opt" data-val="not-friendly" onclick="setToggle('friendly','not-friendly',this)">😠</button>
       </div>
     </div>
-
     <div class="toggle-row">
       <div class="toggle-label">Affiliation</div>
       <div class="emoji-toggle" id="togglePolitical">
@@ -437,16 +536,21 @@
       </div>
     </div>
 
-    <div class="section-label">Contacts</div>
+    <div class="section-title">Contacts</div>
     <div id="editContacts"></div>
     <button class="add-btn" onclick="addContactField()">+ Add Contact</button>
 
-    <div class="section-label">Dogs</div>
+    <div class="section-title">Dogs</div>
     <div id="editDogs"></div>
     <button class="add-btn" onclick="addDogField()">+ Add Dog</button>
 
+    <div class="section-title">Photos</div>
+    <div class="photo-gallery" id="editPhotoGallery"></div>
+    <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="uploadPhoto(event)">
+    <button class="add-btn" onclick="document.getElementById('photoInput').click()" id="uploadPhotoBtn">+ Add Photo</button>
+
     <label>Notes</label>
-    <textarea id="editNotes" placeholder="Anything else to note..."></textarea>
+    <textarea id="editNotes" placeholder="Anything else..."></textarea>
 
     <div class="panel-actions">
       <button class="btn-cancel" onclick="closeEditPanel()">Cancel</button>
@@ -460,15 +564,15 @@
 <div class="panel-overlay" id="listPanel" onclick="closeOnOverlay(event,'listPanel')">
   <div class="panel">
     <div class="panel-handle"></div>
-    <div style="display:flex;align-items:center;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;margin-bottom:14px;">
       <h2 style="flex:1;margin:0;">Addresses</h2>
       <span style="font-size:13px;color:var(--text-tertiary);margin-right:8px;" id="listCount"></span>
-      <button class="icon-btn" onclick="closeListPanel()" style="width:32px;height:32px;font-size:14px;">✕</button>
+      <button class="icon-btn" onclick="closePanel('listPanel')" style="width:30px;height:30px;font-size:13px;">✕</button>
     </div>
     <div id="listContent"></div>
-    <div class="panel-actions" style="margin-top:16px;">
-      <button class="btn-secondary" onclick="exportData()" style="font-size:14px;">📤 Export</button>
-      <button class="btn-secondary" onclick="document.getElementById('importFile').click()" style="font-size:14px;">📥 Import</button>
+    <div class="panel-actions" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="exportData()" style="font-size:13px;">📤 Export</button>
+      <button class="btn-secondary" onclick="document.getElementById('importFile').click()" style="font-size:13px;">📥 Import</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     </div>
   </div>
@@ -478,13 +582,9 @@
 <div class="panel-overlay" id="settingsPanel" onclick="closeOnOverlay(event,'settingsPanel')">
   <div class="panel">
     <div class="panel-handle"></div>
-    <div style="display:flex;align-items:center;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;margin-bottom:14px;">
       <h2 style="flex:1;margin:0;">Settings</h2>
-      <button class="icon-btn" onclick="closeSettings()" style="width:32px;height:32px;font-size:14px;">✕</button>
-    </div>
-    <div class="settings-row">
-      <label>Mapbox Access Token</label>
-      <input type="text" id="settingsToken" placeholder="pk.eyJ1Ijo...">
+      <button class="icon-btn" onclick="closePanel('settingsPanel')" style="width:30px;height:30px;font-size:13px;">✕</button>
     </div>
     <div class="settings-row">
       <label>Map Style</label>
@@ -496,119 +596,166 @@
         <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
       </select>
     </div>
+    <div class="settings-row">
+      <label>Mapbox Access Token</label>
+      <input type="text" id="settingsToken" placeholder="pk.eyJ1Ijo...">
+    </div>
+    <div class="settings-row">
+      <label>Signed in as</label>
+      <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;" id="settingsUser"></div>
+      <button class="btn-cancel" onclick="doLogout()" style="margin-top:8px;padding:10px;font-size:14px;">Sign Out</button>
+    </div>
     <div class="panel-actions">
-      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-cancel" onclick="closePanel('settingsPanel')">Cancel</button>
       <button class="btn-save" onclick="saveSettings()">Save</button>
     </div>
-    <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border-light);">
-      <p style="font-size:12px;color:var(--text-tertiary);">hornhüd v2.1 — Data stored locally.<br>
-      <span id="pinCount">0</span> addresses saved.</p>
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border-light);">
+      <p style="font-size:12px;color:var(--text-faint);">hornhüd v3.0 — Synced via Firebase.<br><span id="pinCount">0</span> addresses.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Help Panel ─── -->
+<div class="panel-overlay" id="helpPanel" onclick="closeOnOverlay(event,'helpPanel')">
+  <div class="panel">
+    <div class="panel-handle"></div>
+    <div style="display:flex;align-items:center;margin-bottom:14px;">
+      <h2 style="flex:1;margin:0;">How to Use hornhüd</h2>
+      <button class="icon-btn" onclick="closePanel('helpPanel')" style="width:30px;height:30px;font-size:13px;">✕</button>
+    </div>
+    <div class="help-content">
+      <h3>Tagging an Address</h3>
+      <p>Zoom in and tap any building on the map. If it's already tagged, you'll see its details. If it's new, an edit form opens with the address auto-filled.</p>
+
+      <h3>Editing a Record</h3>
+      <p>From the detail view, tap <strong>Edit</strong> at the bottom. You can change the disposition (😊/😠), affiliation (🫏/🐘), add contacts, dogs, photos, and notes.</p>
+
+      <h3>The + Button</h3>
+      <p>If you don't see a building outline (e.g. you're standing in front of a house), tap <strong>+</strong> at the bottom right. It uses your GPS to create an entry for wherever you are.</p>
+
+      <h3>Searching &amp; Filtering</h3>
+      <p>Use the search bar to find addresses or contact names. Tap the 🏷️ button to filter by disposition, affiliation, or favorites.</p>
+
+      <h3>Favorites</h3>
+      <p>In the detail view, tap the heart to favorite an address. Your favorites are visible to all users but personal to you — the other user has their own favorites.</p>
+
+      <h3>Interactions</h3>
+      <p>Keep a log of when you connected with someone. In the detail view, tap <strong>+ Log</strong> to add a timestamped note. Each entry shows who logged it.</p>
+
+      <h3>Photos</h3>
+      <p>In edit mode, tap <strong>+ Add Photo</strong> to attach images (house, yard, pets, etc). Photos are stored in the cloud and visible to both users.</p>
+
+      <h3>Importing &amp; Exporting Data</h3>
+      <div class="help-step"><div class="step-num">1</div><div class="step-text">Open the <strong>List</strong> view from the bottom bar.</div></div>
+      <div class="help-step"><div class="step-num">2</div><div class="step-text"><strong>Export:</strong> Tap 📤 Export to download all your data as a JSON file.</div></div>
+      <div class="help-step"><div class="step-num">3</div><div class="step-text"><strong>Import:</strong> Tap 📥 Import and select a previously exported JSON file. Existing records are updated; new ones are added.</div></div>
+
+      <h3>Saving to Contacts</h3>
+      <p>In the detail view, tap <strong>📇 vCard</strong> to generate a contact card. On iPhone, this opens a prompt to add them to your Contacts app.</p>
+
+      <h3>Map Styles</h3>
+      <p>Go to ⚙️ Settings to switch between Streets, Satellite, Outdoors, Light, and Dark map views.</p>
     </div>
   </div>
 </div>
 
 <script>
 // ════════════════════════════════════════════
-// IndexedDB
+// Firebase
 // ════════════════════════════════════════════
-const DB_NAME = 'NeighborMapDB';
-const DB_VERSION = 3;
-let db;
+const firebaseConfig = {
+  apiKey: "AIzaSyBS93QakyeYlK16RuxLNarue5IKsnVFEfk",
+  authDomain: "hornhud-7cad2.firebaseapp.com",
+  projectId: "hornhud-7cad2",
+  storageBucket: "hornhud-7cad2.firebasestorage.app",
+  messagingSenderId: "1075696398962",
+  appId: "1:1075696398962:web:758c291359e183fe4fc8eb"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const fsdb = firebase.firestore();
+const storage = firebase.storage();
+const pinsRef = fsdb.collection('pins');
 
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (e) => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains('pins')) {
-        d.createObjectStore('pins', { keyPath: 'id' });
-      }
-    };
-    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
-    req.onerror = (e) => reject(e.target.error);
-  });
-}
-function getAllPins() {
-  return new Promise((resolve, reject) => {
-    const req = db.transaction('pins','readonly').objectStore('pins').getAll();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-function saveDBPin(pin) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('pins','readwrite');
-    tx.objectStore('pins').put(pin);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-function deleteDBPin(id) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('pins','readwrite');
-    tx.objectStore('pins').delete(id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
+let currentUser = null;
+let unsubPins = null;
 
 // ════════════════════════════════════════════
-// USPS Address Formatting
+// Auth
 // ════════════════════════════════════════════
-function formatUSPS(addr) {
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('authScreen').classList.add('hidden');
+    const token = localStorage.getItem('mapbox_token');
+    if (token) {
+      document.getElementById('setupScreen').classList.add('hidden');
+      showApp();
+      initMap(token);
+    } else {
+      document.getElementById('setupScreen').classList.remove('hidden');
+    }
+  } else {
+    currentUser = null;
+    document.getElementById('authScreen').classList.remove('hidden');
+  }
+});
+
+function doLogin() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  document.getElementById('authError').textContent = '';
+  auth.signInWithEmailAndPassword(email, pass).catch(err => {
+    document.getElementById('authError').textContent = err.message.replace('Firebase: ', '');
+  });
+}
+
+function doLogout() {
+  if (unsubPins) unsubPins();
+  auth.signOut();
+  location.reload();
+}
+
+function saveMapboxToken() {
+  const t = document.getElementById('setupToken').value.trim();
+  if (!t) { showToast('Please enter a token'); return; }
+  localStorage.setItem('mapbox_token', t);
+  document.getElementById('setupScreen').classList.add('hidden');
+  showApp();
+  initMap(t);
+}
+
+function showApp() {
+  document.getElementById('topBar').classList.remove('hidden');
+  document.getElementById('bottomBar').classList.remove('hidden');
+}
+
+function userName() {
+  return currentUser?.email?.split('@')[0] || 'Unknown';
+}
+
+// ════════════════════════════════════════════
+// USPS Formatting
+// ════════════════════════════════════════════
+function fmt(addr) {
   if (!addr) return '';
-  // Take just the street part (before city)
-  let street = addr.split(',')[0].trim();
-
-  const dirMap = {
-    'North':'N','South':'S','East':'E','West':'W',
-    'Northeast':'NE','Northwest':'NW','Southeast':'SE','Southwest':'SW'
-  };
-  const suffixMap = {
-    'Street':'St','Avenue':'Ave','Boulevard':'Blvd','Drive':'Dr',
-    'Lane':'Ln','Court':'Ct','Place':'Pl','Road':'Rd','Circle':'Cir',
-    'Way':'Way','Terrace':'Ter','Trail':'Trl','Parkway':'Pkwy',
-    'Highway':'Hwy','Loop':'Loop','Alley':'Aly'
-  };
-
-  // Replace directionals
-  for (const [full, abbr] of Object.entries(dirMap)) {
-    street = street.replace(new RegExp(`\\b${full}\\b`, 'g'), abbr);
-  }
-  // Replace suffixes
-  for (const [full, abbr] of Object.entries(suffixMap)) {
-    street = street.replace(new RegExp(`\\b${full}\\b`, 'gi'), abbr);
-  }
-  return street;
+  let s = addr.split(',')[0].trim();
+  const dirs = { Northeast:'NE',Northwest:'NW',Southeast:'SE',Southwest:'SW',North:'N',South:'S',East:'E',West:'W' };
+  const suf = { Street:'St',Avenue:'Ave',Boulevard:'Blvd',Drive:'Dr',Lane:'Ln',Court:'Ct',Place:'Pl',Road:'Rd',Circle:'Cir',Way:'Way',Terrace:'Ter',Trail:'Trl',Parkway:'Pkwy',Highway:'Hwy' };
+  for (const [f,a] of Object.entries(dirs)) s = s.replace(new RegExp(`\\b${f}\\b`,'g'), a);
+  for (const [f,a] of Object.entries(suf)) s = s.replace(new RegExp(`\\b${f}\\b`,'gi'), a);
+  return s;
 }
 
 // ════════════════════════════════════════════
 // State
 // ════════════════════════════════════════════
-const FRIENDLY_COLORS = { 'friendly':'#22c55e','not-friendly':'#ef4444','':'#94a3b8' };
+const FCOL = { friendly:'#22c55e', 'not-friendly':'#ef4444', '':'#94a3b8' };
 let map, markers = {}, pinData = [], activeFilter = 'all';
-let userLng, userLat, showLabels = false;
+let userLng, userLat, showCards = false;
 let editFriendly = '', editPolitical = '';
 let currentDetailId = null;
-let editContactsList = [], editDogsList = [];
-
-// ════════════════════════════════════════════
-// Token
-// ════════════════════════════════════════════
-function getToken() { return localStorage.getItem('mapbox_token') || ''; }
-function saveToken() {
-  const t = document.getElementById('setupToken').value.trim();
-  if (!t) { showToast('Please enter a token'); return; }
-  localStorage.setItem('mapbox_token', t);
-  document.getElementById('setupScreen').classList.add('hidden');
-  initMap(t);
-}
-function saveSettings() {
-  const t = document.getElementById('settingsToken').value.trim();
-  if (t) localStorage.setItem('mapbox_token', t);
-  closeSettings();
-  showToast('Settings saved');
-}
+let editContactsList = [], editDogsList = [], editPhotosList = [];
 
 // ════════════════════════════════════════════
 // Map
@@ -618,55 +765,28 @@ async function initMap(token) {
   map = new mapboxgl.Map({
     container: 'map',
     style: localStorage.getItem('map_style') || 'mapbox://styles/mapbox/streets-v12',
-    center: [-122.5, 45.5], // Portland default
-    zoom: 14,
+    center: [-122.56, 45.55],
+    zoom: 19,
     attributionControl: false
   });
   map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
-  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  map.addControl(new mapboxgl.NavigationControl({ visualizePitch: false }), 'top-right');
 
-  const geo = new mapboxgl.GeolocateControl({
-    positionOptions: { enableHighAccuracy: true },
-    trackUserLocation: true, showUserHeading: true
-  });
+  const geo = new mapboxgl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true });
   map.addControl(geo, 'top-right');
 
-  map.on('load', async () => {
+  map.on('load', () => {
     geo.trigger();
-    await openDB();
-    pinData = await getAllPins();
-    // Migrate v1 data
-    for (const p of pinData) {
-      if (p.category && !p.friendly) {
-        p.friendly = (p.category === 'friendly' || p.category === 'not-friendly') ? p.category : '';
-        delete p.category;
-        if (!p.contacts && p.owner) p.contacts = [{ name: p.owner, phone: p.phone || '', email: p.email || '' }];
-        if (!p.dogs) p.dogs = [];
-        if (!p.political) p.political = '';
-        await saveDBPin(p);
-      }
-      // Ensure arrays exist
-      if (!p.contacts) p.contacts = p.owner ? [{ name: p.owner, phone: p.phone || '', email: p.email || '' }] : [];
-      if (!p.dogs) p.dogs = [];
-    }
-    renderAllMarkers();
-    addBuildingColorLayer();
-    updatePinCount();
+    listenToPins(); // Firestore real-time
   });
 
-  // Building click — tap anywhere on a building to find or create a pin
   map.on('click', async (e) => {
-    // Check if we tapped an existing marker first (handled by marker click)
-    // Then check if we hit a building
     const features = map.queryRenderedFeatures(e.point, { layers: ['building'] });
     if (features.length > 0) {
       const { lng, lat } = e.lngLat;
-      // Check if there's already a pin near this location
-      const nearby = findNearbyPin(lng, lat, 0.0002); // ~20m
-      if (nearby) {
-        openDetailPanel(nearby.id);
-      } else {
-        // Reverse geocode and open edit for new pin
+      const nearby = findNearby(lng, lat);
+      if (nearby) { openDetailPanel(nearby.id); }
+      else {
         const addr = await reverseGeocode(lng, lat);
         openEditPanel(null, { lng, lat, address: addr, buildingGeometry: features[0].geometry });
       }
@@ -674,68 +794,64 @@ async function initMap(token) {
   });
 
   map.on('zoom', () => {
-    const shouldShow = map.getZoom() >= 17;
-    if (shouldShow !== showLabels) {
-      showLabels = shouldShow;
-      document.getElementById('map').classList.toggle('show-labels', showLabels);
-    }
+    const sc = map.getZoom() >= 17;
+    if (sc !== showCards) { showCards = sc; document.getElementById('map').classList.toggle('show-cards', showCards); }
   });
 
-  geo.on('geolocate', (e) => {
-    userLng = e.coords.longitude;
-    userLat = e.coords.latitude;
-  });
+  geo.on('geolocate', (e) => { userLng = e.coords.longitude; userLat = e.coords.latitude; });
 }
 
-function findNearbyPin(lng, lat, threshold) {
-  return pinData.find(p =>
-    Math.abs(p.lng - lng) < threshold && Math.abs(p.lat - lat) < threshold
-  );
+function findNearby(lng, lat) {
+  return pinData.find(p => Math.abs(p.lng - lng) < 0.0002 && Math.abs(p.lat - lat) < 0.0002);
 }
 
 // ════════════════════════════════════════════
-// Building Color Layer (political overlay)
+// Firestore Real-Time
+// ════════════════════════════════════════════
+function listenToPins() {
+  unsubPins = pinsRef.onSnapshot(snap => {
+    pinData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAllMarkers();
+    updateBuildingColors();
+    updatePinCount();
+  }, err => console.error('Firestore error:', err));
+}
+
+async function savePinToDB(pin) {
+  const { id, ...data } = pin;
+  await pinsRef.doc(id).set(data, { merge: true });
+}
+
+async function deletePinFromDB(id) {
+  await pinsRef.doc(id).delete();
+}
+
+// ════════════════════════════════════════════
+// Building Color Layer
 // ════════════════════════════════════════════
 function addBuildingColorLayer() {
-  if (map.getSource('pin-buildings')) return;
-
-  map.addSource('pin-buildings', {
-    type: 'geojson',
-    data: buildColorGeoJSON()
-  });
-
-  // Insert below the building label layer but above the base building layer
+  if (map.getSource('pin-bldgs')) return;
+  map.addSource('pin-bldgs', { type: 'geojson', data: buildColorGJ() });
   map.addLayer({
-    id: 'pin-building-fills',
-    type: 'fill-extrusion',
-    source: 'pin-buildings',
-    paint: {
-      'fill-extrusion-color': ['get', 'color'],
-      'fill-extrusion-opacity': 0.55,
-      'fill-extrusion-height': 8,
-      'fill-extrusion-base': 0
-    }
+    id: 'pin-bldg-fills', type: 'fill-extrusion', source: 'pin-bldgs',
+    paint: { 'fill-extrusion-color': ['get','color'], 'fill-extrusion-opacity': 0.5, 'fill-extrusion-height': 8, 'fill-extrusion-base': 0 }
   });
 }
 
-function buildColorGeoJSON() {
-  const features = [];
-  for (const pin of pinData) {
-    if (!pin.political || !pin.buildingGeometry) continue;
-    const color = pin.political === 'donkey' ? '#2563eb' : pin.political === 'elephant' ? '#dc2626' : null;
-    if (!color) continue;
-    features.push({
-      type: 'Feature',
-      geometry: pin.buildingGeometry,
-      properties: { color, id: pin.id }
-    });
-  }
+function buildColorGJ() {
+  const features = pinData.filter(p => p.political && p.buildingGeometry).map(p => ({
+    type: 'Feature', geometry: p.buildingGeometry,
+    properties: { color: p.political === 'donkey' ? '#2563eb' : '#dc2626', id: p.id }
+  }));
   return { type: 'FeatureCollection', features };
 }
 
 function updateBuildingColors() {
-  const src = map.getSource('pin-buildings');
-  if (src) src.setData(buildColorGeoJSON());
+  if (!map) return;
+  try {
+    if (!map.getSource('pin-bldgs')) addBuildingColorLayer();
+    else map.getSource('pin-bldgs').setData(buildColorGJ());
+  } catch(e) {}
 }
 
 // ════════════════════════════════════════════
@@ -743,100 +859,81 @@ function updateBuildingColors() {
 // ════════════════════════════════════════════
 async function reverseGeocode(lng, lat) {
   try {
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=address&access_token=${mapboxgl.accessToken}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.features?.length > 0) return data.features[0].place_name;
-  } catch (e) { console.error('Geocode error', e); }
-  return '';
-}
-
-// ════════════════════════════════════════════
-// Quick Tag FAB
-// ════════════════════════════════════════════
-async function quickTag() {
-  if (!userLng || !userLat) { showToast('Waiting for GPS...'); return; }
-  const fab = document.getElementById('fabQuickTag');
-  fab.classList.add('loading');
-  const addr = await reverseGeocode(userLng, userLat);
-
-  // Check for nearby existing pin
-  const nearby = findNearbyPin(userLng, userLat, 0.0002);
-  fab.classList.remove('loading');
-
-  if (nearby) {
-    openDetailPanel(nearby.id);
-  } else {
-    // Try to get building geometry at user's location
-    const point = map.project([userLng, userLat]);
-    const features = map.queryRenderedFeatures(point, { layers: ['building'] });
-    const geom = features.length > 0 ? features[0].geometry : null;
-    openEditPanel(null, { lng: userLng, lat: userLat, address: addr, buildingGeometry: geom });
-  }
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=address&access_token=${mapboxgl.accessToken}`);
+    const d = await r.json();
+    return d.features?.[0]?.place_name || '';
+  } catch(e) { return ''; }
 }
 
 // ════════════════════════════════════════════
 // Markers
 // ════════════════════════════════════════════
-function getMarkerEmoji(pin) {
-  if (pin.friendly === 'friendly') return '😊';
-  if (pin.friendly === 'not-friendly') return '😠';
-  return '🏠';
-}
-function getMarkerColor(pin) {
-  return FRIENDLY_COLORS[pin.friendly || ''] || FRIENDLY_COLORS[''];
-}
+function mkEmoji(p) { return p.friendly === 'friendly' ? '😊' : p.friendly === 'not-friendly' ? '😠' : '🏠'; }
+
 function createMarkerEl(pin) {
-  const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'position:relative;cursor:pointer;';
+  const w = document.createElement('div');
+  w.className = 'marker-wrap';
+
   const el = document.createElement('div');
   el.className = 'marker-pin';
-  el.style.background = getMarkerColor(pin);
-  const emoji = document.createElement('span');
-  emoji.className = 'marker-emoji';
-  emoji.textContent = getMarkerEmoji(pin);
-  el.appendChild(emoji);
-  wrapper.appendChild(el);
+  el.style.background = FCOL[pin.friendly || ''] || FCOL[''];
+  const em = document.createElement('span');
+  em.className = 'marker-emoji';
+  em.textContent = mkEmoji(pin);
+  el.appendChild(em);
+  w.appendChild(el);
 
-  const label = document.createElement('div');
-  label.className = 'marker-label';
-  label.textContent = formatUSPS(pin.address) || 'No address';
-  wrapper.appendChild(label);
-  return wrapper;
+  // Favorite heart
+  const fav = document.createElement('div');
+  fav.className = 'marker-fav' + (pin.favorites?.[currentUser?.uid] ? ' active' : '');
+  fav.textContent = '❤️';
+  w.appendChild(fav);
+
+  // Building info card
+  const card = document.createElement('div');
+  card.className = 'bldg-card';
+  const firstName = (pin.contacts || [])[0]?.name || '';
+  let icons = '';
+  if (pin.friendly === 'friendly') icons += '😊';
+  if (pin.friendly === 'not-friendly') icons += '😠';
+  if (pin.political === 'donkey') icons += '🫏';
+  if (pin.political === 'elephant') icons += '🐘';
+  if ((pin.dogs || []).length) icons += '🐕';
+  if (pin.favorites?.[currentUser?.uid]) icons += '❤️';
+  card.innerHTML = `<div class="bldg-card-name">${esc(firstName || fmt(pin.address))}</div>` +
+    (icons ? `<div class="bldg-card-icons">${icons}</div>` : '');
+  w.appendChild(card);
+
+  return w;
 }
 
 function renderAllMarkers() {
   Object.values(markers).forEach(m => m.remove());
   markers = {};
-  pinData.forEach(pin => addMarkerToMap(pin));
+  pinData.forEach(p => addMarker(p));
   applyFilters();
 }
 
-function addMarkerToMap(pin) {
+function addMarker(pin) {
   const el = createMarkerEl(pin);
-  el.addEventListener('click', (e) => { e.stopPropagation(); openDetailPanel(pin.id); });
-  const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom-left' })
+  el.addEventListener('click', e => { e.stopPropagation(); openDetailPanel(pin.id); });
+  markers[pin.id] = new mapboxgl.Marker({ element: el, anchor: 'bottom-left' })
     .setLngLat([pin.lng, pin.lat]).addTo(map);
-  markers[pin.id] = marker;
 }
 
 function applyFilters() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  pinData.forEach(pin => {
-    const marker = markers[pin.id];
-    if (!marker) return;
-    let matchFilter = true;
-    if (activeFilter === 'friendly') matchFilter = pin.friendly === 'friendly';
-    else if (activeFilter === 'not-friendly') matchFilter = pin.friendly === 'not-friendly';
-    else if (activeFilter === 'donkey') matchFilter = pin.political === 'donkey';
-    else if (activeFilter === 'elephant') matchFilter = pin.political === 'elephant';
-
-    const contactNames = (pin.contacts || []).map(c => c.name.toLowerCase()).join(' ');
-    const matchSearch = !search ||
-      (pin.address || '').toLowerCase().includes(search) ||
-      contactNames.includes(search) ||
-      (pin.notes || '').toLowerCase().includes(search);
-    marker.getElement().style.display = (matchFilter && matchSearch) ? '' : 'none';
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  pinData.forEach(p => {
+    const m = markers[p.id]; if (!m) return;
+    let fOk = true;
+    if (activeFilter === 'friendly') fOk = p.friendly === 'friendly';
+    else if (activeFilter === 'not-friendly') fOk = p.friendly === 'not-friendly';
+    else if (activeFilter === 'donkey') fOk = p.political === 'donkey';
+    else if (activeFilter === 'elephant') fOk = p.political === 'elephant';
+    else if (activeFilter === 'favorited') fOk = !!p.favorites?.[currentUser?.uid];
+    const names = (p.contacts||[]).map(c => c.name.toLowerCase()).join(' ');
+    const sOk = !q || (p.address||'').toLowerCase().includes(q) || names.includes(q) || (p.notes||'').toLowerCase().includes(q);
+    m.getElement().style.display = (fOk && sOk) ? '' : 'none';
   });
 }
 
@@ -848,175 +945,202 @@ function openDetailPanel(id) {
   if (!pin) return;
   currentDetailId = id;
 
-  document.getElementById('detailAddr').textContent = formatUSPS(pin.address) || 'No address';
-  document.getElementById('detailCoords').textContent = `${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}`;
+  document.getElementById('detailAddr').textContent = fmt(pin.address) || 'No address';
+  document.getElementById('detailCreatedBy').textContent = pin.createdByName ? `Added by ${pin.createdByName}` : '';
+
+  // Favorite button
+  const isFav = !!pin.favorites?.[currentUser?.uid];
+  document.getElementById('favBtn').textContent = isFav ? '❤️' : '🤍';
+  document.getElementById('favBtn').classList.toggle('active', isFav);
 
   // Tags
-  const tagsEl = document.getElementById('detailTags');
-  let tagsHtml = '';
-  if (pin.friendly === 'friendly') tagsHtml += '<span class="detail-tag friendly"><span class="detail-tag-emoji">😊</span> Friendly</span>';
-  else if (pin.friendly === 'not-friendly') tagsHtml += '<span class="detail-tag not-friendly"><span class="detail-tag-emoji">😠</span> Not Friendly</span>';
-  if (pin.political === 'donkey') tagsHtml += '<span class="detail-tag donkey"><span class="detail-tag-emoji">🫏</span> Donkey</span>';
-  else if (pin.political === 'elephant') tagsHtml += '<span class="detail-tag elephant"><span class="detail-tag-emoji">🐘</span> Elephant</span>';
-  if (!tagsHtml) tagsHtml = '<span class="detail-value empty">None</span>';
-  tagsEl.innerHTML = tagsHtml;
+  let tags = '';
+  if (pin.friendly === 'friendly') tags += '<span class="tag-pill friendly"><span class="tag-emoji">😊</span> Friendly</span>';
+  else if (pin.friendly === 'not-friendly') tags += '<span class="tag-pill not-friendly"><span class="tag-emoji">😠</span> Not Friendly</span>';
+  if (pin.political === 'donkey') tags += '<span class="tag-pill donkey"><span class="tag-emoji">🫏</span> Donkey</span>';
+  else if (pin.political === 'elephant') tags += '<span class="tag-pill elephant"><span class="tag-emoji">🐘</span> Elephant</span>';
+  document.getElementById('detailTags').innerHTML = tags || '<span class="detail-value empty">No tags</span>';
 
   // Contacts
   const contacts = pin.contacts || [];
-  const contactsEl = document.getElementById('detailContacts');
-  const contactsSection = document.getElementById('detailContactsSection');
-  if (contacts.length === 0) {
-    contactsEl.innerHTML = '<span class="detail-value empty">No contacts</span>';
-  } else {
-    contactsEl.innerHTML = contacts.map(c => `
-      <div class="contact-card">
+  document.getElementById('detailContacts').innerHTML = contacts.length === 0
+    ? '<span class="detail-value empty">No contacts</span>'
+    : contacts.map(c => `<div class="contact-card">
         <div class="contact-name">${esc(c.name) || 'Unnamed'}</div>
-        ${c.phone ? '<div class="contact-meta">📱 ' + esc(c.phone) + '</div>' : ''}
-        ${c.email ? '<div class="contact-meta">✉️ ' + esc(c.email) + '</div>' : ''}
+        ${c.phone ? `<a class="contact-link" href="tel:${esc(c.phone)}">📱 ${esc(c.phone)}</a><br>` : ''}
+        ${c.email ? `<a class="contact-link" href="mailto:${esc(c.email)}">✉️ ${esc(c.email)}</a>` : ''}
       </div>`).join('');
-  }
 
   // Dogs
   const dogs = pin.dogs || [];
-  const dogsEl = document.getElementById('detailDogs');
-  const dogsSection = document.getElementById('detailDogsSection');
-  if (dogs.length === 0) {
-    dogsEl.innerHTML = '<span class="detail-value empty">No dogs</span>';
-  } else {
-    dogsEl.innerHTML = dogs.map(d => `
-      <div class="dog-card">
-        <div class="dog-emoji">🐕</div>
-        <div>
-          <div class="dog-name">${esc(d.name) || 'Unnamed'}</div>
-          ${d.breed ? '<div class="dog-breed">' + esc(d.breed) + '</div>' : ''}
-        </div>
-      </div>`).join('');
-  }
+  document.getElementById('detailDogs').innerHTML = dogs.length === 0
+    ? '<span class="detail-value empty">No dogs</span>'
+    : dogs.map(d => `<div class="dog-card"><div class="dog-emoji">🐕</div><div><div class="dog-name">${esc(d.name)||'Unnamed'}</div>${d.breed?'<div class="dog-breed">'+esc(d.breed)+'</div>':''}</div></div>`).join('');
+
+  // Photos
+  const photos = pin.photos || [];
+  let photoHtml = photos.map(p => `<img class="photo-thumb" src="${p.url}" onclick="viewPhoto('${p.url}')">`).join('');
+  document.getElementById('detailPhotos').innerHTML = photoHtml || '<span class="detail-value empty">No photos</span>';
 
   // Notes
-  const notesSection = document.getElementById('detailNotesSection');
-  const notesEl = document.getElementById('detailNotes');
-  if (pin.notes?.trim()) {
-    notesEl.textContent = pin.notes;
-    notesEl.classList.remove('empty');
-  } else {
-    notesEl.textContent = 'No notes';
-    notesEl.classList.add('empty');
-  }
+  const nEl = document.getElementById('detailNotes');
+  if (pin.notes?.trim()) { nEl.textContent = pin.notes; nEl.classList.remove('empty'); }
+  else { nEl.textContent = 'No notes'; nEl.classList.add('empty'); }
 
-  document.getElementById('detailUpdated').textContent = pin.updated
-    ? new Date(pin.updated).toLocaleDateString('en-US', { month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit' })
-    : '—';
+  // Interactions
+  const ints = (pin.interactions || []).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  document.getElementById('detailInteractions').innerHTML = ints.length === 0
+    ? '<span class="detail-value empty">No interactions logged</span>'
+    : ints.map(i => `<div class="interaction-item">
+        <div class="interaction-note">${esc(i.note)}</div>
+        <div class="interaction-meta">${i.userName || 'Unknown'} · ${i.date ? new Date(i.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : ''}</div>
+      </div>`).join('');
+
+  // Timestamps
+  document.getElementById('detailTimestamps').textContent = pin.updated
+    ? 'Updated ' + new Date(pin.updated).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})
+    : '';
 
   document.getElementById('detailPanel').classList.add('open');
 }
 
 function closeDetailPanel() { document.getElementById('detailPanel').classList.remove('open'); currentDetailId = null; }
+function editFromDetail() { const id = currentDetailId; closeDetailPanel(); setTimeout(() => openEditPanel(id), 120); }
 
-function editFromDetail() {
-  const id = currentDetailId;
-  closeDetailPanel();
-  setTimeout(() => openEditPanel(id), 120);
+function viewPhoto(url) {
+  document.getElementById('photoViewerImg').src = url;
+  document.getElementById('photoViewer').classList.add('open');
+}
+
+// ════════════════════════════════════════════
+// Favorites
+// ════════════════════════════════════════════
+async function toggleFavorite() {
+  if (!currentDetailId || !currentUser) return;
+  const pin = pinData.find(p => p.id === currentDetailId);
+  if (!pin) return;
+  const favs = pin.favorites || {};
+  const isFav = !!favs[currentUser.uid];
+  favs[currentUser.uid] = !isFav;
+  await pinsRef.doc(currentDetailId).update({ favorites: favs });
+  // UI updates via real-time listener
+}
+
+// ════════════════════════════════════════════
+// Interactions
+// ════════════════════════════════════════════
+function openAddInteraction() { document.getElementById('interactionNote').value = ''; document.getElementById('interactionPanel').classList.add('open'); }
+
+async function saveInteraction() {
+  if (!currentDetailId) return;
+  const note = document.getElementById('interactionNote').value.trim();
+  if (!note) { showToast('Enter a note'); return; }
+  const pin = pinData.find(p => p.id === currentDetailId);
+  if (!pin) return;
+  const ints = pin.interactions || [];
+  ints.push({ note, date: new Date().toISOString(), userId: currentUser?.uid, userName: userName() });
+  await pinsRef.doc(currentDetailId).update({ interactions: ints });
+  closePanel('interactionPanel');
+  showToast('Interaction logged');
+  // Detail panel will refresh via real-time listener; reopen it
+  setTimeout(() => openDetailPanel(currentDetailId), 300);
 }
 
 // ════════════════════════════════════════════
 // Edit Panel
 // ════════════════════════════════════════════
-function setToggle(group, value, btn) {
-  const container = group === 'friendly'
-    ? document.getElementById('toggleFriendly')
-    : document.getElementById('togglePolitical');
-  container.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('selected'));
+function setToggle(group, val, btn) {
+  const c = document.getElementById(group === 'friendly' ? 'toggleFriendly' : 'togglePolitical');
+  c.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  if (group === 'friendly') editFriendly = value; else editPolitical = value;
+  if (group === 'friendly') editFriendly = val; else editPolitical = val;
+}
+function syncToggle(cId, val) {
+  document.getElementById(cId).querySelectorAll('.emoji-opt').forEach(b => b.classList.toggle('selected', b.dataset.val === val));
 }
 
-function syncToggleUI(containerId, value) {
-  document.getElementById(containerId).querySelectorAll('.emoji-opt').forEach(b => {
-    b.classList.toggle('selected', b.dataset.val === value);
-  });
-}
-
-// ─── Contacts editing ───
 function renderEditContacts() {
-  const container = document.getElementById('editContacts');
-  container.innerHTML = editContactsList.map((c, i) => `
-    <div class="edit-card">
-      <button class="remove-card" onclick="removeContact(${i})">✕</button>
-      <input type="text" placeholder="Name" value="${esc(c.name)}" onchange="editContactsList[${i}].name=this.value">
-      <input type="tel" placeholder="Phone" value="${esc(c.phone)}" onchange="editContactsList[${i}].phone=this.value">
-      <input type="email" placeholder="Email" value="${esc(c.email)}" onchange="editContactsList[${i}].email=this.value">
+  document.getElementById('editContacts').innerHTML = editContactsList.map((c, i) => `
+    <div class="edit-card"><button class="remove-card" onclick="editContactsList.splice(${i},1);renderEditContacts()">✕</button>
+    <input placeholder="Name" value="${esc(c.name)}" onchange="editContactsList[${i}].name=this.value">
+    <input placeholder="Phone" value="${esc(c.phone)}" onchange="editContactsList[${i}].phone=this.value">
+    <input placeholder="Email" value="${esc(c.email)}" onchange="editContactsList[${i}].email=this.value">
     </div>`).join('');
 }
-function addContactField() {
-  editContactsList.push({ name: '', phone: '', email: '' });
-  renderEditContacts();
+function addContactField() { editContactsList.push({name:'',phone:'',email:''}); renderEditContacts(); }
+
+function renderEditDogs() {
+  document.getElementById('editDogs').innerHTML = editDogsList.map((d, i) => `
+    <div class="edit-card"><button class="remove-card" onclick="editDogsList.splice(${i},1);renderEditDogs()">✕</button>
+    <input placeholder="Dog name" value="${esc(d.name)}" onchange="editDogsList[${i}].name=this.value">
+    <input placeholder="Breed" value="${esc(d.breed)}" onchange="editDogsList[${i}].breed=this.value">
+    </div>`).join('');
 }
-function removeContact(i) {
-  editContactsList.splice(i, 1);
-  renderEditContacts();
+function addDogField() { editDogsList.push({name:'',breed:''}); renderEditDogs(); }
+
+function renderEditPhotos() {
+  document.getElementById('editPhotoGallery').innerHTML = editPhotosList.map((p, i) =>
+    `<img class="photo-thumb" src="${p.url}" onclick="editPhotosList.splice(${i},1);renderEditPhotos()">`
+  ).join('');
 }
 
-// ─── Dogs editing ───
-function renderEditDogs() {
-  const container = document.getElementById('editDogs');
-  container.innerHTML = editDogsList.map((d, i) => `
-    <div class="edit-card">
-      <button class="remove-card" onclick="removeDog(${i})">✕</button>
-      <input type="text" placeholder="Dog name" value="${esc(d.name)}" onchange="editDogsList[${i}].name=this.value">
-      <input type="text" placeholder="Breed" value="${esc(d.breed)}" onchange="editDogsList[${i}].breed=this.value">
-    </div>`).join('');
-}
-function addDogField() {
-  editDogsList.push({ name: '', breed: '' });
-  renderEditDogs();
-}
-function removeDog(i) {
-  editDogsList.splice(i, 1);
-  renderEditDogs();
+async function uploadPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const id = document.getElementById('editId').value || 'temp_' + Date.now();
+  const btn = document.getElementById('uploadPhotoBtn');
+  btn.textContent = 'Uploading...'; btn.disabled = true;
+  try {
+    const path = `photos/${id}/${Date.now()}_${file.name}`;
+    const ref = storage.ref(path);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    editPhotosList.push({ url, storagePath: path, uploadedBy: currentUser?.uid, uploadedByName: userName(), uploadedAt: new Date().toISOString() });
+    renderEditPhotos();
+    showToast('Photo uploaded');
+  } catch(e) { showToast('Upload failed'); console.error(e); }
+  btn.textContent = '+ Add Photo'; btn.disabled = false;
+  event.target.value = '';
 }
 
 function openEditPanel(id, defaults) {
   const isNew = !id;
   const panel = document.getElementById('editPanel');
-
   if (isNew) {
-    document.getElementById('editTitle').textContent = 'Tag This Address';
+    document.getElementById('editTitle').textContent = 'New Entry';
     document.getElementById('editId').value = '';
-    document.getElementById('editAddress').value = formatUSPS(defaults?.address || '');
+    document.getElementById('editAddress').value = fmt(defaults?.address || '');
     document.getElementById('editNotes').value = '';
     document.getElementById('btnDeletePin').style.display = 'none';
     editFriendly = ''; editPolitical = '';
-    editContactsList = [{ name: '', phone: '', email: '' }];
+    editContactsList = [{name:'',phone:'',email:''}];
     editDogsList = [];
+    editPhotosList = [];
     panel.dataset.lng = defaults?.lng || '';
     panel.dataset.lat = defaults?.lat || '';
     panel.dataset.buildingGeometry = defaults?.buildingGeometry ? JSON.stringify(defaults.buildingGeometry) : '';
   } else {
     const pin = pinData.find(p => p.id === id);
     if (!pin) return;
-    document.getElementById('editTitle').textContent = 'Edit Address';
+    document.getElementById('editTitle').textContent = 'Edit Record';
     document.getElementById('editId').value = pin.id;
-    document.getElementById('editAddress').value = formatUSPS(pin.address);
+    document.getElementById('editAddress').value = fmt(pin.address);
     document.getElementById('editNotes').value = pin.notes || '';
     document.getElementById('btnDeletePin').style.display = '';
-    editFriendly = pin.friendly || '';
-    editPolitical = pin.political || '';
-    editContactsList = (pin.contacts || []).map(c => ({ ...c }));
-    editDogsList = (pin.dogs || []).map(d => ({ ...d }));
-    if (editContactsList.length === 0) editContactsList.push({ name: '', phone: '', email: '' });
+    editFriendly = pin.friendly || ''; editPolitical = pin.political || '';
+    editContactsList = (pin.contacts || []).map(c => ({...c}));
+    editDogsList = (pin.dogs || []).map(d => ({...d}));
+    editPhotosList = (pin.photos || []).map(p => ({...p}));
+    if (!editContactsList.length) editContactsList.push({name:'',phone:'',email:''});
     panel.dataset.lng = pin.lng;
     panel.dataset.lat = pin.lat;
     panel.dataset.buildingGeometry = pin.buildingGeometry ? JSON.stringify(pin.buildingGeometry) : '';
   }
-
-  syncToggleUI('toggleFriendly', editFriendly);
-  syncToggleUI('togglePolitical', editPolitical);
-  renderEditContacts();
-  renderEditDogs();
+  syncToggle('toggleFriendly', editFriendly);
+  syncToggle('togglePolitical', editPolitical);
+  renderEditContacts(); renderEditDogs(); renderEditPhotos();
   panel.classList.add('open');
 }
-
 function closeEditPanel() { document.getElementById('editPanel').classList.remove('open'); }
 
 async function savePin() {
@@ -1024,49 +1148,41 @@ async function savePin() {
   const existingId = document.getElementById('editId').value;
   const id = existingId || ('pin_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
 
-  // Read current values from input fields (in case onchange didn't fire)
-  const contactEls = document.getElementById('editContacts').querySelectorAll('.edit-card');
-  editContactsList = Array.from(contactEls).map(card => {
+  // Read latest values from DOM
+  document.getElementById('editContacts').querySelectorAll('.edit-card').forEach((card, i) => {
     const inputs = card.querySelectorAll('input');
-    return { name: inputs[0].value.trim(), phone: inputs[1].value.trim(), email: inputs[2].value.trim() };
-  }).filter(c => c.name || c.phone || c.email);
-
-  const dogEls = document.getElementById('editDogs').querySelectorAll('.edit-card');
-  editDogsList = Array.from(dogEls).map(card => {
+    if (editContactsList[i]) { editContactsList[i].name = inputs[0].value.trim(); editContactsList[i].phone = inputs[1].value.trim(); editContactsList[i].email = inputs[2].value.trim(); }
+  });
+  document.getElementById('editDogs').querySelectorAll('.edit-card').forEach((card, i) => {
     const inputs = card.querySelectorAll('input');
-    return { name: inputs[0].value.trim(), breed: inputs[1].value.trim() };
-  }).filter(d => d.name || d.breed);
+    if (editDogsList[i]) { editDogsList[i].name = inputs[0].value.trim(); editDogsList[i].breed = inputs[1].value.trim(); }
+  });
 
-  let buildingGeometry = null;
-  try { buildingGeometry = JSON.parse(panel.dataset.buildingGeometry); } catch(e) {}
-  // If we don't have geometry, try to capture it from existing pin
-  if (!buildingGeometry) {
-    const existing = pinData.find(p => p.id === id);
-    if (existing?.buildingGeometry) buildingGeometry = existing.buildingGeometry;
-  }
+  const cleanContacts = editContactsList.filter(c => c.name || c.phone || c.email);
+  const cleanDogs = editDogsList.filter(d => d.name || d.breed);
+  let bGeom = null;
+  try { bGeom = JSON.parse(panel.dataset.buildingGeometry); } catch(e) {}
+  if (!bGeom) { const ex = pinData.find(p => p.id === id); if (ex?.buildingGeometry) bGeom = ex.buildingGeometry; }
 
+  const existing = pinData.find(p => p.id === id);
   const pin = {
     id,
-    address:   document.getElementById('editAddress').value.trim(),
-    friendly:  editFriendly,
-    political: editPolitical,
-    contacts:  editContactsList,
-    dogs:      editDogsList,
-    notes:     document.getElementById('editNotes').value.trim(),
-    lng:       parseFloat(panel.dataset.lng),
-    lat:       parseFloat(panel.dataset.lat),
-    buildingGeometry,
-    created:   pinData.find(p => p.id === id)?.created || new Date().toISOString(),
-    updated:   new Date().toISOString()
+    address: document.getElementById('editAddress').value.trim(),
+    friendly: editFriendly, political: editPolitical,
+    contacts: cleanContacts, dogs: cleanDogs,
+    photos: editPhotosList,
+    notes: document.getElementById('editNotes').value.trim(),
+    lng: parseFloat(panel.dataset.lng), lat: parseFloat(panel.dataset.lat),
+    buildingGeometry: bGeom,
+    interactions: existing?.interactions || [],
+    favorites: existing?.favorites || {},
+    createdBy: existing?.createdBy || currentUser?.uid,
+    createdByName: existing?.createdByName || userName(),
+    created: existing?.created || new Date().toISOString(),
+    updated: new Date().toISOString()
   };
 
-  await saveDBPin(pin);
-  const idx = pinData.findIndex(p => p.id === id);
-  if (idx >= 0) pinData[idx] = pin; else pinData.push(pin);
-
-  renderAllMarkers();
-  updateBuildingColors();
-  updatePinCount();
+  await savePinToDB(pin);
   closeEditPanel();
   showToast('Saved');
 }
@@ -1074,83 +1190,89 @@ async function savePin() {
 async function deletePin() {
   const id = document.getElementById('editId').value;
   if (!id || !confirm('Delete this address?')) return;
-  await deleteDBPin(id);
-  pinData = pinData.filter(p => p.id !== id);
-  if (markers[id]) { markers[id].remove(); delete markers[id]; }
-  updateBuildingColors();
-  updatePinCount();
+  await deletePinFromDB(id);
   closeEditPanel();
   showToast('Deleted');
+}
+
+// ════════════════════════════════════════════
+// vCard Export
+// ════════════════════════════════════════════
+function exportVCard() {
+  const pin = pinData.find(p => p.id === currentDetailId);
+  if (!pin) return;
+  const contacts = pin.contacts || [];
+  if (!contacts.length) { showToast('No contacts to export'); return; }
+  const c = contacts[0];
+  const parts = (c.name || '').split(' ');
+  const last = parts.length > 1 ? parts.pop() : '';
+  const first = parts.join(' ');
+  let vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nN:${last};${first};;;\n`;
+  if (c.phone) vcard += `TEL;TYPE=CELL:${c.phone}\n`;
+  if (c.email) vcard += `EMAIL:${c.email}\n`;
+  if (pin.address) vcard += `ADR;TYPE=HOME:;;${fmt(pin.address)};Portland;OR;;\n`;
+  if (pin.notes) vcard += `NOTE:${pin.notes.replace(/\n/g, '\\n')}\n`;
+  vcard += `END:VCARD`;
+  const blob = new Blob([vcard], { type: 'text/vcard' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${(c.name||'contact').replace(/\s+/g,'_')}.vcf`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('vCard downloaded');
 }
 
 // ════════════════════════════════════════════
 // Location
 // ════════════════════════════════════════════
 function goToMyLocation() {
-  if (userLng && userLat) {
-    map.flyTo({ center: [userLng, userLat], zoom: 17 });
-  } else {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { userLng = pos.coords.longitude; userLat = pos.coords.latitude; map.flyTo({ center: [userLng, userLat], zoom: 17 }); },
-      () => showToast('Location unavailable')
-    );
-  }
+  if (userLng && userLat) map.flyTo({ center: [userLng, userLat], zoom: 19 });
+  else navigator.geolocation.getCurrentPosition(
+    p => { userLng = p.coords.longitude; userLat = p.coords.latitude; map.flyTo({ center: [userLng, userLat], zoom: 19 }); },
+    () => showToast('Location unavailable')
+  );
 }
 
 // ════════════════════════════════════════════
 // List View
 // ════════════════════════════════════════════
 function openListView() {
-  const container = document.getElementById('listContent');
-  const search = document.getElementById('searchInput').value.toLowerCase();
+  const q = document.getElementById('searchInput').value.toLowerCase();
   const filtered = pinData.filter(p => {
-    let matchFilter = true;
-    if (activeFilter === 'friendly') matchFilter = p.friendly === 'friendly';
-    else if (activeFilter === 'not-friendly') matchFilter = p.friendly === 'not-friendly';
-    else if (activeFilter === 'donkey') matchFilter = p.political === 'donkey';
-    else if (activeFilter === 'elephant') matchFilter = p.political === 'elephant';
-    const contactNames = (p.contacts||[]).map(c=>c.name.toLowerCase()).join(' ');
-    const matchSearch = !search ||
-      (p.address||'').toLowerCase().includes(search) || contactNames.includes(search);
-    return matchFilter && matchSearch;
-  }).sort((a, b) => formatUSPS(a.address).localeCompare(formatUSPS(b.address)));
+    let fOk = true;
+    if (activeFilter === 'friendly') fOk = p.friendly === 'friendly';
+    else if (activeFilter === 'not-friendly') fOk = p.friendly === 'not-friendly';
+    else if (activeFilter === 'donkey') fOk = p.political === 'donkey';
+    else if (activeFilter === 'elephant') fOk = p.political === 'elephant';
+    else if (activeFilter === 'favorited') fOk = !!p.favorites?.[currentUser?.uid];
+    const names = (p.contacts||[]).map(c=>c.name.toLowerCase()).join(' ');
+    return fOk && (!q || (p.address||'').toLowerCase().includes(q) || names.includes(q));
+  }).sort((a,b) => fmt(a.address).localeCompare(fmt(b.address)));
 
-  document.getElementById('listCount').textContent = filtered.length + ' addresses';
-
-  if (filtered.length === 0) {
-    container.innerHTML = '<p style="text-align:center;color:var(--text-tertiary);padding:32px 0;">No addresses found.</p>';
-  } else {
-    container.innerHTML = filtered.map(p => {
-      const emoji = getMarkerEmoji(p);
-      const bgClass = p.friendly === 'friendly' ? 'friendly-bg' : p.friendly === 'not-friendly' ? 'not-friendly-bg' : 'neutral-bg';
-      const shortAddr = formatUSPS(p.address) || 'No address';
-      const firstContact = (p.contacts || [])[0]?.name || '';
-      const dogCount = (p.dogs || []).length;
+  document.getElementById('listCount').textContent = filtered.length;
+  const cont = document.getElementById('listContent');
+  if (!filtered.length) { cont.innerHTML = '<p style="text-align:center;color:var(--text-faint);padding:28px 0;">No addresses found.</p>'; }
+  else {
+    cont.innerHTML = filtered.map(p => {
+      const bgC = p.friendly === 'friendly' ? 'f-bg' : p.friendly === 'not-friendly' ? 'nf-bg' : 'n-bg';
       let badges = '';
-      if (p.political === 'donkey') badges += '<span class="list-badge">🫏</span>';
-      if (p.political === 'elephant') badges += '<span class="list-badge">🐘</span>';
-      if (dogCount > 0) badges += '<span class="list-badge">🐕</span>';
-      return `
-        <div class="list-item" onclick="flyToPin('${p.id}')">
-          <div class="list-icon ${bgClass}">${emoji}</div>
-          <div class="list-info">
-            <div class="list-addr">${esc(shortAddr)}</div>
-            <div class="list-meta">${esc(firstContact) || '<span style="color:var(--text-tertiary)">No contact</span>'}</div>
-          </div>
-          <div class="list-badges">${badges}</div>
-        </div>`;
+      if (p.political === 'donkey') badges += '🫏';
+      if (p.political === 'elephant') badges += '🐘';
+      if ((p.dogs||[]).length) badges += '🐕';
+      if (p.favorites?.[currentUser?.uid]) badges += '❤️';
+      return `<div class="list-item" onclick="flyToPin('${p.id}')">
+        <div class="list-icon ${bgC}">${mkEmoji(p)}</div>
+        <div class="list-info"><div class="list-addr">${esc(fmt(p.address)||'No address')}</div>
+        <div class="list-meta">${esc((p.contacts||[])[0]?.name)||'<span style="color:var(--text-faint)">No contact</span>'}</div></div>
+        <div class="list-badges">${badges}</div></div>`;
     }).join('');
   }
   document.getElementById('listPanel').classList.add('open');
 }
 
-function closeListPanel() { document.getElementById('listPanel').classList.remove('open'); }
-
+function closeListPanel() { closePanel('listPanel'); }
 function flyToPin(id) {
-  const pin = pinData.find(p => p.id === id);
-  if (!pin) return;
-  closeListPanel();
-  map.flyTo({ center: [pin.lng, pin.lat], zoom: 18 });
+  const pin = pinData.find(p => p.id === id); if (!pin) return;
+  closePanel('listPanel');
+  map.flyTo({ center: [pin.lng, pin.lat], zoom: 19 });
   setTimeout(() => openDetailPanel(id), 600);
 }
 
@@ -1164,73 +1286,61 @@ function setFilter(f) {
   applyFilters();
 }
 function openSettings() {
-  document.getElementById('settingsToken').value = getToken();
+  document.getElementById('settingsToken').value = localStorage.getItem('mapbox_token') || '';
   document.getElementById('settingsStyle').value = localStorage.getItem('map_style') || 'mapbox://styles/mapbox/streets-v12';
+  document.getElementById('settingsUser').textContent = currentUser?.email || '';
   document.getElementById('settingsPanel').classList.add('open');
 }
-function closeSettings() { document.getElementById('settingsPanel').classList.remove('open'); }
+function saveSettings() {
+  const t = document.getElementById('settingsToken').value.trim();
+  if (t) localStorage.setItem('mapbox_token', t);
+  closePanel('settingsPanel'); showToast('Saved');
+}
 function changeMapStyle() {
-  const style = document.getElementById('settingsStyle').value;
-  localStorage.setItem('map_style', style);
-  if (map) { map.setStyle(style); map.once('style.load', () => { renderAllMarkers(); addBuildingColorLayer(); }); }
+  const s = document.getElementById('settingsStyle').value;
+  localStorage.setItem('map_style', s);
+  if (map) { map.setStyle(s); map.once('style.load', () => { renderAllMarkers(); addBuildingColorLayer(); }); }
 }
+function openHelp() { document.getElementById('helpPanel').classList.add('open'); }
 function updatePinCount() { const el = document.getElementById('pinCount'); if (el) el.textContent = pinData.length; }
-function closeOnOverlay(e, id) { if (e.target === document.getElementById(id)) document.getElementById(id).classList.remove('open'); }
+function closePanel(id) { document.getElementById(id).classList.remove('open'); }
+function closeOnOverlay(e, id) { if (e.target === document.getElementById(id)) closePanel(id); }
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2000);
-}
+function showToast(m) { const el = document.getElementById('toast'); el.textContent = m; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
 
 // ════════════════════════════════════════════
 // Export / Import
 // ════════════════════════════════════════════
 function exportData() {
   const blob = new Blob([JSON.stringify(pinData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url;
-  a.download = `hornhud-${new Date().toISOString().slice(0,10)}.json`;
-  a.click(); URL.revokeObjectURL(url); showToast('Exported');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `hornhud-${new Date().toISOString().slice(0,10)}.json`; a.click(); showToast('Exported');
 }
-
 async function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  const file = event.target.files[0]; if (!file) return;
   try {
     const data = JSON.parse(await file.text());
     if (!Array.isArray(data)) throw new Error();
-    let count = 0;
+    let c = 0;
     for (const pin of data) {
-      if (!pin.id || !pin.lng || !pin.lat) continue;
-      // Migrate
-      if (pin.category && !pin.friendly) {
-        pin.friendly = (pin.category === 'friendly' || pin.category === 'not-friendly') ? pin.category : '';
-        delete pin.category;
-      }
-      if (!pin.contacts) pin.contacts = pin.owner ? [{ name: pin.owner, phone: pin.phone||'', email: pin.email||'' }] : [];
-      if (!pin.dogs) pin.dogs = [];
-      if (!pin.political) pin.political = '';
-      await saveDBPin(pin);
-      const idx = pinData.findIndex(p => p.id === pin.id);
-      if (idx >= 0) pinData[idx] = pin; else pinData.push(pin);
-      count++;
+      if (!pin.lng || !pin.lat) continue;
+      if (!pin.id) pin.id = 'pin_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+      if (pin.category) { pin.friendly = (pin.category==='friendly'||pin.category==='not-friendly') ? pin.category : ''; delete pin.category; }
+      if (!pin.contacts) pin.contacts = pin.owner ? [{name:pin.owner,phone:pin.phone||'',email:pin.email||''}] : [];
+      if (!pin.dogs) pin.dogs = []; if (!pin.political) pin.political = '';
+      if (!pin.interactions) pin.interactions = []; if (!pin.photos) pin.photos = []; if (!pin.favorites) pin.favorites = {};
+      if (!pin.createdBy) { pin.createdBy = currentUser?.uid; pin.createdByName = userName(); }
+      await savePinToDB(pin); c++;
     }
-    renderAllMarkers(); updateBuildingColors(); updatePinCount();
-    showToast(`Imported ${count}`);
-  } catch (e) { showToast('Import failed'); }
+    showToast(`Imported ${c}`);
+  } catch(e) { showToast('Import failed'); }
   event.target.value = '';
 }
 
 // ════════════════════════════════════════════
 // Boot
 // ════════════════════════════════════════════
-(function boot() {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
-  const token = getToken();
-  if (token) { document.getElementById('setupScreen').classList.add('hidden'); initMap(token); }
-})();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 </script>
 </body>
 </html>
